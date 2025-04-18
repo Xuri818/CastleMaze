@@ -5,8 +5,10 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QMessageBox,
 from PyQt6.QtGui import (QPainter, QColor, QKeyEvent, 
                         QImage, QPixmap, QPalette)
 from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QTimer
 from maze.generate import Generate
 from maze.player import Player
+from maze.solve import MazeSolver
 
 # Configuracion de la ventana
 MAZE_SIZE = 9
@@ -33,7 +35,8 @@ class MazeWidget(QWidget):
         self.goal_set = False
         self.start_set = False
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        
+        # Elegimos una meta aleatoria válida
+
         self.load_textures()
         self.generate_maze()
 
@@ -117,7 +120,12 @@ class MazeWidget(QWidget):
         self.generator.generate_maze()
         self.generator.generate_render_maze()
         self.generator.add_imperfections(100)
-        self.render_maze = self.generator.render_maze
+        self.render_maze = self.generator.getRenderMaze()
+        
+        goal_row, goal_col = self.find_random_goal()
+        self.render_maze[goal_row][goal_col] = 3
+        self.goal_set = True
+        self.goal_pos = (goal_row, goal_col)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -163,6 +171,8 @@ class MazeWidget(QWidget):
                     painter.fillRect(x, y, self.cell_size, self.cell_size, QColor(0, 255, 0))
                 elif value == 4:
                     painter.fillRect(x, y, self.cell_size, self.cell_size, QColor(255, 100, 100))
+                elif value == 5:
+                    painter.fillRect(x, y, self.cell_size, self.cell_size, QColor(100, 180, 255))  # Ruta óptima azul
 
         # Dibujar muros
         for row in range(self.physical_rows):
@@ -221,15 +231,27 @@ class MazeWidget(QWidget):
         if self.render_maze[row][col] in [1, 3, 4]:
             return
         
-        if not self.goal_set:
-            self.render_maze[row][col] = 3
-            self.goal_set = True
-        elif not self.start_set:
-            self.render_maze[row][col] = 4
+        if not self.start_set:
+            self.render_maze[row][col] = 4  # inicio
             self.start_set = True
             self.player.set_position(row, col)
-        
-        self.update()
+
+            # Resolver y mostrar el camino
+            
+            solver = MazeSolver(self.render_maze)
+            self.render_maze = solver.solve()
+            self.update()
+            
+
+
+    def find_random_goal(self):
+        valid_goals = [
+            (r, c) for r in range(self.physical_rows) 
+                    for c in range(self.logical_cols) 
+                    if self.render_maze[r][c] == 0
+        ]
+        return random.choice(valid_goals)
+
 
     def keyPressEvent(self, event: QKeyEvent):
         if not self.player.position:

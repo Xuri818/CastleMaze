@@ -1,3 +1,5 @@
+# generate.py
+
 import random
 
 class Generate:
@@ -57,7 +59,17 @@ class Generate:
             if self.maze[start_y][start_x] != 0:
                 attempts += 1
                 continue
+
+            directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+            random.shuffle(directions)
             
+            for dx, dy in directions:
+                nx, ny = start_y + dx, start_x + dy
+                if 0 <= nx < self.logical_rows and 0 <= ny < self.logical_cols and self.maze[nx][ny] == 0:
+                    self.maze[nx][ny] = 0
+                    added += 1
+                    break
+
             direction = random.choice(['horizontal', 'vertical'])
             
             if direction == 'horizontal':
@@ -92,3 +104,6 @@ class Generate:
                         break
             
             attempts += 1
+
+    def getRenderMaze(self):
+        return self.render_maze
