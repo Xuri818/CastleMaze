@@ -122,6 +122,7 @@ class MazeWidget(QWidget):
         self.generator.add_imperfections(100)
         self.render_maze = self.generator.getRenderMaze()
         
+        
         goal_row, goal_col = self.find_random_goal()
         self.render_maze[goal_row][goal_col] = 3
         self.goal_set = True
@@ -131,14 +132,18 @@ class MazeWidget(QWidget):
         painter = QPainter(self)
         painter.fillRect(0, 0, self.width(), self.height(), BACKGROUND_COLOR)
         
+        rows = len(self.render_maze)
+        cols = len(self.render_maze[0]) if rows > 0 else 0
+        
         total_width = self.logical_cols * self.cell_size
         total_height = self.physical_rows * self.cell_size
         x_offset = (self.width() - total_width) // 2
         y_offset = 10  # Margen superior
         
+        
         # Dibujar pisos y atajos
-        for row in range(self.physical_rows):
-            for col in range(self.logical_cols):
+        for row in range(rows):
+            for col in range(cols):
                 value = self.render_maze[row][col]
                 x = x_offset + col * self.cell_size
                 y = y_offset + row * self.cell_size
@@ -175,20 +180,20 @@ class MazeWidget(QWidget):
                     painter.fillRect(x, y, self.cell_size, self.cell_size, QColor(100, 180, 255))  # Ruta óptima azul
 
         # Dibujar muros
-        for row in range(self.physical_rows):
-            for col in range(self.logical_cols):
+        for row in range(rows):
+            for col in range(cols):
                 if self.render_maze[row][col] == 1:
                     x = x_offset + col * self.cell_size
                     y = y_offset + row * self.cell_size
                     
                     texture = 'wall_top'
-                    if row == self.physical_rows - 1:
+                    if row == rows - 1:
                         texture = 'wall_bottom'
-                    elif row < self.physical_rows - 1 and self.render_maze[row+1][col] in [0, 2, 3, 4]:
+                    elif row < rows - 1 and self.render_maze[row+1][col] in [0, 2, 3, 4]:
                         texture = 'wall_bottom'
-                    elif (row < self.physical_rows - 1 and 
+                    elif (row < rows - 1 and 
                         self.render_maze[row+1][col] == 1 and
-                        (row+1 == self.physical_rows - 1 or 
+                        (row+1 == rows- 1 or 
                         self.render_maze[row+2][col] in [0, 2, 3, 4])):
                         texture = 'wall_mid'
                     
@@ -245,12 +250,17 @@ class MazeWidget(QWidget):
 
 
     def find_random_goal(self):
+        rows = len(self.render_maze)
+        cols = len(self.render_maze[0]) if rows > 0 else 0
+
         valid_goals = [
-            (r, c) for r in range(self.physical_rows) 
-                    for c in range(self.logical_cols) 
-                    if self.render_maze[r][c] == 0
+            (r, c) for r in range(rows)
+                for c in range(cols)
+                if self.render_maze[r][c] == 0
         ]
-        return random.choice(valid_goals)
+    
+        return random.choice(valid_goals) if valid_goals else (1, 1)
+
 
 
     def keyPressEvent(self, event: QKeyEvent):
@@ -286,7 +296,7 @@ class MazeWindow(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(15)
         
-        self.maze_widget = MazeWidget(MAZE_SIZE, MAZE_SIZE * 3)
+        self.maze_widget = MazeWidget(30, 30)
         layout.addWidget(self.maze_widget)
         
         self.control_panel = QWidget()
