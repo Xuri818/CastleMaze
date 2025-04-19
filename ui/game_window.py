@@ -119,7 +119,7 @@ class MazeWidget(QWidget):
         """Genera el laberinto y configura el renderizado"""
         self.generator.generate_maze()
         self.generator.generate_render_maze()
-        self.generator.add_imperfections(100)
+        self.generator.add_imperfections(500)
         self.render_maze = self.generator.getRenderMaze()
         
         
@@ -296,7 +296,7 @@ class MazeWindow(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(15)
         
-        self.maze_widget = MazeWidget(30, 30)
+        self.maze_widget = MazeWidget(25, 25)
         layout.addWidget(self.maze_widget)
         
         self.control_panel = QWidget()
