@@ -11,7 +11,6 @@ from maze.player import Player
 from maze.solve import MazeSolver
 
 # Configuracion de la ventana
-MAZE_SIZE = 9
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
 CONTROL_PANEL_HEIGHT = 100
@@ -23,9 +22,8 @@ BORDER_COLOR = QColor(80, 80, 80)
 class MazeWidget(QWidget):
     def __init__(self, rows, cols, parent=None):
         super().__init__(parent)
-        self.logical_rows = rows
-        self.logical_cols = cols
-        self.physical_rows = rows * 3
+        self.physical_rows = rows 
+        self.physical_cols = cols 
         self.calculate_cell_size()
         
         self.generator = Generate(rows, cols)
@@ -45,7 +43,7 @@ class MazeWidget(QWidget):
         available_width = WINDOW_WIDTH - 20
         available_height = WINDOW_HEIGHT - CONTROL_PANEL_HEIGHT - 20
         
-        width_based = available_width // self.logical_cols
+        width_based = available_width // self.physical_cols
         height_based = available_height // self.physical_rows
         
         self.cell_size = min(width_based, height_based)
@@ -55,7 +53,7 @@ class MazeWidget(QWidget):
         """Determina qué textura de piso usar basado en muros adyacentes"""
         has_wall = {
             'u': row > 0 and self.generator.render_maze[row-1][col] == 1,
-            'r': col < self.logical_cols-1 and self.generator.render_maze[row][col+1] == 1,
+            'r': col < self.physical_cols-1 and self.generator.render_maze[row][col+1] == 1,
             'd': row < self.physical_rows-1 and self.generator.render_maze[row+1][col] == 1,
             'l': col > 0 and self.generator.render_maze[row][col-1] == 1
         }
@@ -135,7 +133,7 @@ class MazeWidget(QWidget):
         rows = len(self.render_maze)
         cols = len(self.render_maze[0]) if rows > 0 else 0
         
-        total_width = self.logical_cols * self.cell_size
+        total_width = self.physical_cols * self.cell_size
         total_height = self.physical_rows * self.cell_size
         x_offset = (self.width() - total_width) // 2
         y_offset = 10  # Margen superior
@@ -211,7 +209,7 @@ class MazeWidget(QWidget):
         mouse_x = mouse_pos.x()
         mouse_y = mouse_pos.y()
         
-        total_width = self.logical_cols * self.cell_size
+        total_width = self.physical_cols * self.cell_size
         total_height = self.physical_rows * self.cell_size
         MARGIN_TOP = 10
         MARGIN_SIDES = 10
@@ -230,7 +228,7 @@ class MazeWidget(QWidget):
         col = int((mouse_x - lab_x_start) // self.cell_size)
         row = int((mouse_y - lab_y_start) // self.cell_size)
         
-        col = max(0, min(self.logical_cols - 1, col))
+        col = max(0, min(self.physical_cols - 1, col))
         row = max(0, min(self.physical_rows - 1, row))
         
         if self.render_maze[row][col] in [1, 3, 4]:
@@ -283,7 +281,7 @@ class MazeWidget(QWidget):
                     QMessageBox.information(self, "¡Victoria!", "¡Llegaste a la meta!")
 
 class MazeWindow(QWidget):
-    def __init__(self):
+    def __init__(self, rows, cols):
         super().__init__()
         self.setWindowTitle("CastleMaze")
         self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -296,7 +294,8 @@ class MazeWindow(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(15)
         
-        self.maze_widget = MazeWidget(25, 25)
+        # Pass the dynamic rows and cols here
+        self.maze_widget = MazeWidget(rows, cols)
         layout.addWidget(self.maze_widget)
         
         self.control_panel = QWidget()
