@@ -40,8 +40,8 @@ class MazeWidget(QWidget):
 
     def calculate_cell_size(self):
         """Calcula el tamaño de celda para ajustarse al área disponible"""
-        available_width = WINDOW_WIDTH - 20
-        available_height = WINDOW_HEIGHT - CONTROL_PANEL_HEIGHT - 20
+        available_width = WINDOW_WIDTH - 100
+        available_height = WINDOW_HEIGHT - CONTROL_PANEL_HEIGHT - 100
         
         width_based = available_width // self.physical_cols
         height_based = available_height // self.physical_rows
@@ -117,7 +117,7 @@ class MazeWidget(QWidget):
         """Genera el laberinto y configura el renderizado"""
         self.generator.generate_maze()
         self.generator.generate_render_maze()
-        self.generator.add_imperfections(500)
+        self.generator.add_imperfections(100)
         self.render_maze = self.generator.getRenderMaze()
         
         
@@ -130,18 +130,16 @@ class MazeWidget(QWidget):
         painter = QPainter(self)
         painter.fillRect(0, 0, self.width(), self.height(), BACKGROUND_COLOR)
         
-        rows = len(self.render_maze)
-        cols = len(self.render_maze[0]) if rows > 0 else 0
         
         total_width = self.physical_cols * self.cell_size
         total_height = self.physical_rows * self.cell_size
         x_offset = (self.width() - total_width) // 2
         y_offset = 10  # Margen superior
         
-        
+
         # Dibujar pisos y atajos
-        for row in range(rows):
-            for col in range(cols):
+        for row in range(self.physical_rows):
+            for col in range(self.physical_cols):
                 value = self.render_maze[row][col]
                 x = x_offset + col * self.cell_size
                 y = y_offset + row * self.cell_size
@@ -178,20 +176,20 @@ class MazeWidget(QWidget):
                     painter.fillRect(x, y, self.cell_size, self.cell_size, QColor(100, 180, 255))  # Ruta óptima azul
 
         # Dibujar muros
-        for row in range(rows):
-            for col in range(cols):
+        for row in range(self.physical_rows):
+            for col in range(self.physical_cols):
                 if self.render_maze[row][col] == 1:
                     x = x_offset + col * self.cell_size
                     y = y_offset + row * self.cell_size
                     
                     texture = 'wall_top'
-                    if row == rows - 1:
+                    if row == self.physical_rows - 1:
                         texture = 'wall_bottom'
-                    elif row < rows - 1 and self.render_maze[row+1][col] in [0, 2, 3, 4]:
+                    elif row < self.physical_rows - 1 and self.render_maze[row+1][col] in [0, 2, 3, 4]:
                         texture = 'wall_bottom'
-                    elif (row < rows - 1 and 
+                    elif (row < self.physical_rows - 1 and 
                         self.render_maze[row+1][col] == 1 and
-                        (row+1 == rows- 1 or 
+                        (row+1 == self.physical_rows - 1 or 
                         self.render_maze[row+2][col] in [0, 2, 3, 4])):
                         texture = 'wall_mid'
                     
@@ -219,7 +217,7 @@ class MazeWidget(QWidget):
         lab_x_start = max(MARGIN_SIDES, lab_x_start)
         
         available_height = self.height() - MARGIN_TOP - MARGIN_BOTTOM
-        lab_y_start = MARGIN_TOP + (available_height - total_height) // 2 if total_height < available_height else MARGIN_TOP
+        lab_y_start = 10
         
         if not (lab_x_start <= mouse_x < lab_x_start + total_width and
                 lab_y_start <= mouse_y < lab_y_start + total_height):
@@ -248,12 +246,10 @@ class MazeWidget(QWidget):
 
 
     def find_random_goal(self):
-        rows = len(self.render_maze)
-        cols = len(self.render_maze[0]) if rows > 0 else 0
 
         valid_goals = [
-            (r, c) for r in range(rows)
-                for c in range(cols)
+            (r, c) for r in range(self.physical_rows)
+                for c in range(self.physical_cols)
                 if self.render_maze[r][c] == 0
         ]
     

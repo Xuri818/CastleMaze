@@ -17,7 +17,7 @@ class Player:
         nx, ny = x + dx, y + dy
         
         if (0 <= nx < self.maze_widget.physical_rows and 
-            0 <= ny < self.maze_widget.logical_cols and 
+            0 <= ny < self.maze_widget.physical_cols and 
             self.maze_widget.render_maze[nx][ny] in [0, 2, 3]):
             self.position = (nx, ny)
             return True
