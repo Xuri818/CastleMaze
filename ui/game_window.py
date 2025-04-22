@@ -1,29 +1,33 @@
 import json
 import random
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QMessageBox, 
-                            QLabel, QHBoxLayout)
 from PyQt6.QtGui import (QPainter, QColor, QKeyEvent, 
                         QImage, QPixmap, QPalette)
-from PyQt6.QtCore import Qt
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import *
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel,
+    QHBoxLayout, QMessageBox, QInputDialog
+)
 from maze.generate import Generate
 from maze.player import Player
 from maze.solve import MazeSolver
+
 
 # Configuracion de la ventana
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
 CONTROL_PANEL_HEIGHT = 100
-BACKGROUND_COLOR = QColor(45, 45, 48)
-MAZE_BACKGROUND_COLOR = QColor(60, 60, 60)
+BACKGROUND_COLOR = QColor(18, 18, 18)
+MAZE_BACKGROUND_COLOR = QColor(18, 18, 18)
 PANEL_COLOR = QColor(100, 100, 100)
 BORDER_COLOR = QColor(80, 80, 80)
 
 class MazeWidget(QWidget):
-    def __init__(self, rows, cols, parent=None):
+    def __init__(self, rows, cols, mode, parent=None):
         super().__init__(parent)
         self.physical_rows = rows 
         self.physical_cols = cols 
+        self.gamemode = mode
+        self.solved = False
         self.calculate_cell_size()
         
         self.generator = Generate(rows, cols)
@@ -32,16 +36,18 @@ class MazeWidget(QWidget):
         
         self.goal_set = False
         self.start_set = False
+
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # Elegimos una meta aleatoria válida
+        self.setStyleSheet("background-color: #121212;")  # Dark background
+
 
         self.load_textures()
         self.generate_maze()
 
     def calculate_cell_size(self):
         """Calcula el tamaño de celda para ajustarse al área disponible"""
-        available_width = WINDOW_WIDTH - 100
-        available_height = WINDOW_HEIGHT - CONTROL_PANEL_HEIGHT - 100
+        available_width = WINDOW_WIDTH - 150
+        available_height = WINDOW_HEIGHT - CONTROL_PANEL_HEIGHT - 150
         
         width_based = available_width // self.physical_cols
         height_based = available_height // self.physical_rows
@@ -117,15 +123,22 @@ class MazeWidget(QWidget):
         """Genera el laberinto y configura el renderizado"""
         self.generator.generate_maze()
         self.generator.generate_render_maze()
-        self.generator.add_imperfections(100)
+        self.generator.add_imperfections(1000)
         self.render_maze = self.generator.getRenderMaze()
-        
+
         
         goal_row, goal_col = self.find_random_goal()
         self.render_maze[goal_row][goal_col] = 3
         self.goal_set = True
         self.goal_pos = (goal_row, goal_col)
 
+        if self.gamemode == "Game":
+            start_row, start_col = self.find_random_goal()
+            self.render_maze[start_row][start_col] = 4
+            self.start_set = True
+            self.start_pos = (start_row, start_col)
+            self.player.set_position(start_row, start_col)
+            
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(0, 0, self.width(), self.height(), BACKGROUND_COLOR)
@@ -232,18 +245,31 @@ class MazeWidget(QWidget):
         if self.render_maze[row][col] in [1, 3, 4]:
             return
         
-        if not self.start_set:
+        if self.start_set == False:
             self.render_maze[row][col] = 4  # inicio
             self.start_set = True
-            self.player.set_position(row, col)
+            self.start_pos = (row, col)
 
-            # Resolver y mostrar el camino
-            
-            solver = MazeSolver(self.render_maze)
-            self.render_maze = solver.solve()
-            self.update()
-            
+    def solve_mazee(self):
+        solver = MazeSolver(self.render_maze)
+        self.render_maze= solver.solve()
+        self.paths = solver.get_paths()
+        self.update()
+        self.solved = True
+    
+    def render_path(self, path):
+        
+        for i in range(self.physical_rows):
+            for j in range(self.physical_cols):
+                if self.render_maze[i][j] == 5:  # Reset marked path cells
+                    self.render_maze[i][j] = 0
 
+        
+        for x, y in path:
+            if self.render_maze[x][y] != 4 and self.render_maze[x][y] != 3:  # Exclude start/goal
+                self.render_maze[x][y] = 5
+
+        self.update()  # Redraw the maze
 
     def find_random_goal(self):
 
@@ -267,44 +293,107 @@ class MazeWidget(QWidget):
             Qt.Key.Key_A: (0, -1),
             Qt.Key.Key_D: (0, 1),
         }
-        
-        if event.key() in dir_map:
-            dx, dy = dir_map[event.key()]
-            if self.player.move(dx, dy):
-                self.update()
-                x, y = self.player.position
-                if self.render_maze[x][y] == 3:
-                    QMessageBox.information(self, "¡Victoria!", "¡Llegaste a la meta!")
+        if self.gamemode == "Game":
+            if event.key() in dir_map:
+                dx, dy = dir_map[event.key()]
+                if self.player.move(dx, dy):
+                    self.update()
+                    x, y = self.player.position
+                    if self.render_maze[x][y] == 3:
+                        QMessageBox.information(self, "¡Victoria!", "¡Llegaste a la meta!")
 
-class MazeWindow(QWidget):
-    def __init__(self, rows, cols):
+
+
+class MazeWindow(QMainWindow):
+    def __init__(self, rows, cols, mode):
         super().__init__()
-        self.setWindowTitle("CastleMaze")
-        self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), BACKGROUND_COLOR)
-        self.setPalette(palette)
-        
-        layout = QVBoxLayout()
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(15)
-        
-        # Pass the dynamic rows and cols here
-        self.maze_widget = MazeWidget(rows, cols)
-        layout.addWidget(self.maze_widget)
-        
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.showFullScreen()
+        self.setStyleSheet("background-color: #121212;")
+
+        self.mode = mode  # Store game mode
+
+        # Main Horizontal Layout (Maze + Side Panel)
+        main_layout = QHBoxLayout()
+
+        # Left Side - Maze Layout
+        maze_container = QVBoxLayout()
+
+        # Logo Layout (Top Left)
+        logo_layout = QHBoxLayout()
+        self.logo = QLabel()
+        pixmap = QPixmap("assets/logo.png").scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio)
+        self.logo.setPixmap(pixmap)
+        logo_layout.addWidget(self.logo, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Maze Layout (Centered)
+        self.maze_widget = MazeWidget(rows, cols, mode)
+        self.maze_widget.setMinimumSize(600, 600)  # Ensure maze is visible
+        maze_container.addLayout(logo_layout)  # Add logo at top
+        maze_container.addStretch(1)  # Push maze into center
+        maze_container.addWidget(self.maze_widget, alignment=Qt.AlignmentFlag.AlignCenter)
+        maze_container.addStretch(1)  # Keep spacing consistent
+
+        # Control Panel (Buttons at Bottom)
         self.control_panel = QWidget()
-        self.control_panel.setFixedHeight(CONTROL_PANEL_HEIGHT)
-        self.control_panel.setAutoFillBackground(True)
-        
-        panel_palette = self.control_panel.palette()
-        panel_palette.setColor(self.control_panel.backgroundRole(), PANEL_COLOR)
-        self.control_panel.setPalette(panel_palette)
-        self.control_panel.setStyleSheet(f"border-top: 2px solid {BORDER_COLOR.name()};")
-        
-        panel_layout = QHBoxLayout(self.control_panel)
-        panel_layout.addWidget(QLabel("Panel de control"))
-        
-        layout.addWidget(self.control_panel)
-        self.setLayout(layout)
+        self.control_panel.setFixedHeight(60)
+        self.control_panel.setStyleSheet("background-color: #1A1A1A; border-top: 2px solid #87CEEB;")
+        buttons_layout = QHBoxLayout()
+
+        for text in ["Return", "Solve", "Save", "Upload"]:
+            btn = QPushButton(text)
+            btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px; padding: 8px; border-radius: 5px;")
+            buttons_layout.addWidget(btn)
+
+        self.control_panel.setLayout(buttons_layout)
+        maze_container.addWidget(self.control_panel)  # Buttons go at the bottom
+
+        # Right Side - Path Selection Panel
+        self.path_panel = QWidget()
+        self.path_panel.setFixedWidth(220)
+        self.path_panel.setStyleSheet("background-color: #1A1A1A; border-left: 2px solid #87CEEB;")
+        self.path_layout = QVBoxLayout()
+        self.path_panel.setLayout(self.path_layout)
+
+        # Add both sections to the main layout
+        main_layout.addLayout(maze_container, stretch=3)  # Maze takes more space
+        main_layout.addWidget(self.path_panel, stretch=1)  # Path selection panel
+
+        # Set up main container
+        container = QWidget()
+        container.setLayout(main_layout)
+        self.setCentralWidget(container)
+
+        # Button actions
+        buttons_layout.itemAt(0).widget().clicked.connect(self.return_to_menu)
+        buttons_layout.itemAt(1).widget().clicked.connect(self.solve_maze)
+        buttons_layout.itemAt(2).widget().clicked.connect(self.save_maze)
+        buttons_layout.itemAt(3).widget().clicked.connect(self.upload_maze)
+
+    def solve_maze(self):
+        self.maze_widget.solve_mazee()
+        all_paths = self.maze_widget.paths
+        self.populate_path_buttons(all_paths)
+
+    def save_maze(self):
+        print("Saving maze...")  # Placeholder for save logic
+
+    def upload_maze(self):
+        print("Uploading maze...")  # Placeholder for upload logic
+
+    def return_to_menu(self):
+        print("Returning to menu...")  # Placeholder for menu navigation
+
+    def populate_path_buttons(self, all_paths):
+        # Clear previous buttons
+        while self.path_layout.count():
+            widget = self.path_layout.takeAt(0).widget()
+            if widget:
+                widget.deleteLater()
+
+        # Add buttons for each path
+        for value, (path, steps) in enumerate(all_paths):
+            btn = QPushButton(f"Path {value + 1} ({steps} steps)")
+            btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 14px;")
+            btn.clicked.connect(lambda _, p=path: self.maze_widget.render_path(p))
+            self.path_layout.addWidget(btn)

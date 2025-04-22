@@ -5,6 +5,7 @@ class MazeSolver:
         self.cols = len(maze[0])
         self.goal = None
         self.start = None
+        self.all_paths = []
         self.visited = [[False for _ in range(self.cols)] for _ in range(self.rows)]
         self.shortest_path = None  # Track the shortest path
         self.directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]  # Up, left, down, right
@@ -24,12 +25,15 @@ class MazeSolver:
             print("No path found.")
             return self.maze
 
-        print(self.shortest_path)
+        
         for x, y in self.shortest_path:
             if self.maze[x][y] != 4 and self.maze[x][y] != 3:  #start and goal 
                 self.maze[x][y] = 5
 
         return self.maze
+
+    def get_paths(self):
+        return self.all_paths
 
     def _find_start_goal(self):
         for i in range(self.rows):
@@ -41,7 +45,8 @@ class MazeSolver:
 
     def _backtrack(self, x, y, path):
         if (x, y) == self.goal:
-            # If we reach the goal, check if this path is the shortest
+            self.all_paths.append((list(path), len(path)))
+            
             if self.shortest_path is None or len(path) < len(self.shortest_path):
                 self.shortest_path = list(path)  # Update the shortest path
             return

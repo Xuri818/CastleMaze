@@ -30,6 +30,7 @@ class Generate:
         carve(1, 1)
 
     def generate_render_maze(self):
+
         self.render_maze = [row[:] for row in self.maze]
 
     def add_imperfections(self, count=0):
