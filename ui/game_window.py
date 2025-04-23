@@ -370,9 +370,10 @@ class MazeWindow(QMainWindow):
         buttons_layout.itemAt(3).widget().clicked.connect(self.upload_maze)
 
     def solve_maze(self):
-        self.maze_widget.solve_mazee()
-        all_paths = self.maze_widget.paths
-        self.path_buttons(all_paths)
+        if self.maze_widget.solved == False:
+            self.maze_widget.solve_mazee()
+            all_paths = self.maze_widget.paths
+            self.path_buttons(all_paths)
 
     def save_maze(self):
         print("Saving maze...")  # Placeholder for save logic
@@ -410,4 +411,3 @@ class MazeWindow(QMainWindow):
                 btn.clicked.connect(lambda _, p=path: self.maze_widget.render_path(p))
                 self.path_layout.addWidget(btn)
             xxx += 1
-            
