@@ -123,7 +123,7 @@ class MazeWidget(QWidget):
         """Genera el laberinto y configura el renderizado"""
         self.generator.generate_maze()
         self.generator.generate_render_maze()
-        self.generator.add_imperfections(1000)
+        self.generator.add_imperfections(12)
         self.render_maze = self.generator.getRenderMaze()
 
         
@@ -258,7 +258,6 @@ class MazeWidget(QWidget):
         self.solved = True
     
     def render_path(self, path):
-        
         for i in range(self.physical_rows):
             for j in range(self.physical_cols):
                 if self.render_maze[i][j] == 5:  # Reset marked path cells
@@ -373,7 +372,7 @@ class MazeWindow(QMainWindow):
     def solve_maze(self):
         self.maze_widget.solve_mazee()
         all_paths = self.maze_widget.paths
-        self.populate_path_buttons(all_paths)
+        self.path_buttons(all_paths)
 
     def save_maze(self):
         print("Saving maze...")  # Placeholder for save logic
@@ -384,16 +383,31 @@ class MazeWindow(QMainWindow):
     def return_to_menu(self):
         print("Returning to menu...")  # Placeholder for menu navigation
 
-    def populate_path_buttons(self, all_paths):
-        # Clear previous buttons
+    def path_buttons(self, all_paths):
+    # Clear previous buttons
         while self.path_layout.count():
             widget = self.path_layout.takeAt(0).widget()
             if widget:
                 widget.deleteLater()
 
-        # Add buttons for each path
+        for i in range(len(all_paths)):
+            min_index = i
+            for j in range(i + 1, len(all_paths)):
+                if all_paths[j][1] < all_paths[min_index][1]:  # Compare step counts
+                    min_index = j
+            all_paths[i], all_paths[min_index] = all_paths[min_index], all_paths[i]
+        
+        xxx = 1
         for value, (path, steps) in enumerate(all_paths):
-            btn = QPushButton(f"Path {value + 1} ({steps} steps)")
-            btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 14px;")
-            btn.clicked.connect(lambda _, p=path: self.maze_widget.render_path(p))
-            self.path_layout.addWidget(btn)
+            if xxx == 1:
+                btn = QPushButton(f" ⚡ Path {value + 1} ({steps} steps)")
+                btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 14px;")
+                btn.clicked.connect(lambda _, p=path: self.maze_widget.render_path(p))
+                self.path_layout.addWidget(btn)
+            else: 
+                btn = QPushButton(f"Path {value + 1} ({steps} steps)")
+                btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 14px;")
+                btn.clicked.connect(lambda _, p=path: self.maze_widget.render_path(p))
+                self.path_layout.addWidget(btn)
+            xxx += 1
+            

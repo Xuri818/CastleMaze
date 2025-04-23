@@ -109,7 +109,7 @@ class MazeSizeWindow(QMainWindow):
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)
 
-        for size in [10, 15, 20, 25, 30, 35, 40, 45, 50]:
+        for size in [10, 15, 20, 25, 30, 35]:
             btn = QPushButton(f"{size}x{size}")
             btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
             btn.clicked.connect(lambda _, m = mode, s=size: self.start_maze(s,m))
