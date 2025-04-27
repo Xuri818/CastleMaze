@@ -1,0 +1,47 @@
+{
+  "pj": {
+    "image_path": "pj.png",
+    "frames": {
+      "down_standing": {"x": 84, "y": 6, "width": 48, "height": 63},
+      "down_movement_1": {"x": 18, "y": 9, "width": 39, "height": 63},
+      "down_movement_2": {"x": 159, "y": 9, "width": 39, "height": 63},
+      
+      "left_standing": {"x": 87, "y": 78, "width": 39, "height": 63},
+      "left_movement_1": {"x": 15, "y": 81, "width": 39, "height": 63},
+      "left_movement_2": {"x": 159, "y": 81, "width": 42, "height": 63},
+      
+      "right_standing": {"x": 90, "y": 150, "width": 39, "height": 63},
+      "right_movement_1": {"x": 15, "y": 153, "width": 42, "height": 63},
+      "right_movement_2": {"x": 162, "y": 153, "width": 39, "height": 63},
+      
+      "up_standing": {"x": 84, "y": 222, "width": 48, "height": 63},
+      "up_movement_1": {"x": 18, "y": 225, "width": 39, "height": 63},
+      "up_movement_2": {"x": 159, "y": 225, "width": 39, "height": 63}
+    }
+  },
+  
+  "maze": {
+    "image_path": "maze.png",
+    "frames": {
+      "floor1": {"x": 0, "y": 0, "width": 48, "height": 48},
+      "floor2": {"x": 48, "y": 0, "width": 48, "height": 48},
+      "wall1": {"x": 0, "y": 48, "width": 48, "height": 48},
+      "wall2": {"x": 48, "y": 48, "width": 48, "height": 48}
+    }
+  },
+  
+  "details": {
+    "image_path": "details.png",
+    "frames": {
+      "barrel": {"x": 0, "y": 0, "width": 48, "height": 48},
+      "broken_barrel": {"x": 48, "y": 0, "width": 48, "height": 48},
+      "vase": {"x": 0, "y": 48, "width": 48, "height": 48},
+      "broken_vase": {"x": 48, "y": 48, "width": 48, "height": 48},    
+      "stairs": {"x": 0, "y": 96, "width": 48, "height": 48},
+      "plants": {"x": 48, "y": 96, "width": 48, "height": 48},
+      "chest1": {"x": 96, "y": 0, "width": 48, "height": 48},
+      "chest2": {"x": 96, "y": 48, "width": 48, "height": 48},
+      "chest3": {"x": 96, "y": 96, "width": 48, "height": 48}
+    }
+  }
+}

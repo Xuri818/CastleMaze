@@ -1,141 +1,79 @@
-# main.py
 import sys
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel,
-    QHBoxLayout, QMessageBox, QInputDialog
-)
-from PyQt6.QtGui import QPixmap, QPalette
-from PyQt6.QtCore import *
-from ui.game_window import MazeWindow  # Assuming your maze logic is here
+from PyQt6.QtWidgets import QApplication, QStackedWidget
+from PyQt6.QtGui import QIcon  # Importar QIcon
+from ui.window_intro import IntroWidget
+from ui.window_game_mode import GameModeWidget
+from ui.window_game_select import GameSelectWidget
+from ui.window_size import SizeSelectWidget
+from ui.window_maze import MazeWidget
+from config.game_config import GameConfig
 
-class WelcomeWindow(QMainWindow):
+class MainWindow(QStackedWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint | 
-            Qt.WindowType.WindowMinimizeButtonHint
-        )
-        self.setFixedSize(400, 300)
-        self.setStyleSheet("background-color: #121212;")  # Dark background
-
-        # Layout
-        layout = QVBoxLayout()
-        label = QLabel("Welcome to Castle Maze!")
-        label.setStyleSheet("color: #FFFFFF; font-size: 18px; font-weight: bold;")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-
-        image = QLabel()  # Add your image here
-        pixmap = QPixmap("assets\logo.png").scaled(200, 100, Qt.AspectRatioMode.KeepAspectRatio)
-        image.setPixmap(pixmap)
-        image.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(image)
-
-        play_button = QPushButton("Play")
-        play_button.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-        play_button.clicked.connect(self.go_to_mode_selection)
-        layout.addWidget(play_button)
-
-        close_button = QPushButton("Shut Down")
-        close_button.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-        close_button.clicked.connect(self.close)
-        layout.addWidget(close_button)
-
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-
-    def closeEvent(self, event):
-        self.close()
         
-    def go_to_mode_selection(self):
-        self.mode_window = ModeSelectionWindow()
-        self.mode_window.show()
-        self.close()
-
-class ModeSelectionWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.setFixedSize(400, 300)
-        self.setStyleSheet("background-color: #121212;")
-
-        layout = QVBoxLayout()
-        label = QLabel("Select a Mode:")
-        label.setStyleSheet("color: #FFFFFF; font-size: 18px; font-weight: bold;")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-
-        game_button = QPushButton("Game Mode")
-        game_button.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-        game_button.clicked.connect(lambda: self.go_to_size_selection("Game"))
-        layout.addWidget(game_button)
-
-        no_game_button = QPushButton("No-Game Mode")
-        no_game_button.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-        no_game_button.clicked.connect(lambda: self.go_to_size_selection("No-Game"))
-        layout.addWidget(no_game_button)
-
-        return_button = QPushButton("Return 🢀 ")
-        return_button.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-        return_button.clicked.connect(lambda: self.go_to_welcome())
-        layout.addWidget(return_button)
-
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-
-    def go_to_welcome(self):
-        self.welcome_window = WelcomeWindow()
-        self.welcome_window.show()
-        self.close()
-
-    def go_to_size_selection(self, mode):
-        self.size_window = MazeSizeWindow(mode)
-        self.size_window.show()
-        self.close()
-
-class MazeSizeWindow(QMainWindow):
-    def __init__(self, mode):
-        super().__init__()
-        self.mode = mode
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.setFixedSize(400, 300)
-        self.setStyleSheet("background-color: #121212;")
-
-        layout = QVBoxLayout()
-        label = QLabel(f"Select a Maze Size ({self.mode}):")
-        label.setStyleSheet("color: #FFFFFF; font-size: 18px; font-weight: bold;")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-
-        for size in [10, 15, 20, 25, 30, 35]:
-            btn = QPushButton(f"{size}x{size}")
-            btn.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-            btn.clicked.connect(lambda _, m = mode, s=size: self.start_maze(s,m))
-            layout.addWidget(btn)
-
-        return_button = QPushButton("Return 🢀 ")
-        return_button.setStyleSheet("background-color: #1E90FF; color: white; font-size: 16px;")
-        return_button.clicked.connect(lambda: self.go_to_mode_selection())
-        layout.addWidget(return_button)
-
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-
-    def go_to_mode_selection(self):
-        self.mode_window = ModeSelectionWindow()
-        self.mode_window.show()
-        self.close()
+        # Configuración inicial
+        self.setWindowIcon(QIcon('assets/icon.png'))
+        self.setWindowTitle("Castle Maze")
+        self.setFixedSize(1000, 800)
+        GameConfig.reset()
         
-    def start_maze(self, size, mode):
-        self.maze_window = MazeWindow(size, size, mode)
-        self.maze_window.show()
-        self.close()
+        # Crear widgets
+        self.intro_widget = IntroWidget(self)
+        self.game_mode_widget = GameModeWidget(self)
+        self.game_select_widget = GameSelectWidget(self)
+        self.size_select_widget = SizeSelectWidget(self)
+        self.maze_widget = None
+        
+        # Configurar conexión de señales ANTES de añadir widgets
+        self.size_select_widget.start_game_signal.connect(self._create_maze_widget)
+        
+        # Añadir widgets
+        self.addWidget(self.intro_widget)        # Índice 0
+        self.addWidget(self.game_mode_widget)    # Índice 1
+        self.addWidget(self.game_select_widget)  # Índice 2
+        self.addWidget(self.size_select_widget)  # Índice 3
+        
+        # Mostrar pantalla inicial
+        self.setCurrentWidget(self.intro_widget)
+    
+    def handle_maze_widget_cleanup(self):
+        """Maneja la limpieza segura del maze widget"""
+        if hasattr(self, 'maze_widget') and self.maze_widget is not None:
+            try:
+                # Verificar si el widget aún existe
+                if self.maze_widget.isWidgetType():
+                    self.removeWidget(self.maze_widget)
+                    self.maze_widget.deleteLater()
+            except RuntimeError:
+                pass  # El widget ya fue eliminado
+            finally:
+                self.maze_widget = None
 
-if __name__ == "__main__":
+    def _create_maze_widget(self):
+        """Crea una nueva instancia del maze widget"""
+        try:
+            # Limpiar primero cualquier instancia previa
+            self.handle_maze_widget_cleanup()
+            
+            # Verificar configuración
+            GameConfig.get_game_mode()
+            GameConfig.get_maze_size()
+            
+            # Crear nueva instancia
+            self.maze_widget = MazeWidget(self)
+            self.addWidget(self.maze_widget)
+            self.setCurrentIndex(4)
+            
+        except ValueError as e:
+            print(f"Error de configuración: {e}")
+            self.setCurrentIndex(0)
+
+def main():
     app = QApplication(sys.argv)
-    window = WelcomeWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main()
