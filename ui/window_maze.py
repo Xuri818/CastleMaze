@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, 
-    QFrame, QLabel, QPushButton, QGraphicsView, 
+    QWidget, QVBoxLayout, QHBoxLayout, QGraphicsOpacityEffect,
+    QFrame, QLabel, QPushButton, QGraphicsView, QApplication,
     QGraphicsScene, QGraphicsPixmapItem, QMessageBox
 )
 from PyQt6.QtCore import Qt, QRectF, QTimer, QPointF
@@ -8,6 +8,7 @@ from PyQt6.QtGui import QPixmap, QPalette, QTransform, QPainter, QKeyEvent
 from config.game_config import GameConfig
 from config.Generate import MazeGenerator
 from config.atlas_loader import AtlasLoader
+from config.solve import MazeSolver
 
 class MazeWidget(QWidget):
     def __init__(self, parent=None):
@@ -18,6 +19,11 @@ class MazeWidget(QWidget):
         self.atlas_loader = AtlasLoader()
         self.cell_size = 48
         self.scale_factor = 1.0
+        self.solutions = []
+        self.current_solution_index = -1
+        self.solution_items = []  # Para almacenar los elementos gráficos de la solución
+        self.is_showing_solution = False
+        
         
         # Inicializar todos los temporizadores
         self.animation_timer = QTimer()
@@ -99,6 +105,8 @@ class MazeWidget(QWidget):
         # Establecer el punto de inicio según el modo de juego
         if self.game_mode == 'Classic':
             self._set_random_start_point()
+            # Calcular soluciones posibles
+            self._calculate_solutions()
         elif self.game_mode == 'Solver':
             self.start_point = None  # Sin punto de inicio por defecto en el modo Solver
         
@@ -211,7 +219,21 @@ class MazeWidget(QWidget):
         # Botón de regreso
         self.back_button = QPushButton("Back to Menu", self.bottom_panel)
         self.back_button.setFixedSize(150, 50)
-        self.back_button.setStyleSheet("""
+        # ... (estilos existentes)
+        self.back_button.clicked.connect(self._go_back)
+        layout.addWidget(self.back_button)
+
+        # Botón para quitar la meta (modo Solver)
+        if self.game_mode == 'Solver':
+            self.remove_start_button = QPushButton("Reset Start", self.bottom_panel)
+            # ... (estilos existentes)
+            self.remove_start_button.clicked.connect(self.remove_start)
+            layout.addWidget(self.remove_start_button)
+
+        # Botones para mostrar soluciones (en ambos modos)
+        self.view_solution_button = QPushButton("View Solver", self.bottom_panel)
+        self.view_solution_button.setFixedSize(150, 50)
+        self.view_solution_button.setStyleSheet("""
             QPushButton {
                 font-size: 16px;
                 background-color: #5a5a5a;
@@ -228,33 +250,124 @@ class MazeWidget(QWidget):
                 background-color: #4a4a4a;
             }
         """)
-        self.back_button.clicked.connect(self._go_back)
-        layout.addWidget(self.back_button)
+        self.view_solution_button.clicked.connect(self.show_shortest_solution)
+        layout.addWidget(self.view_solution_button)
 
-        # Botón para quitar la meta (modo Solver)
-        if self.game_mode == 'Solver':
-            self.remove_start_button = QPushButton("Reset Start", self.bottom_panel)
-            self.remove_start_button.setFixedSize(150, 50)
-            self.remove_start_button.setStyleSheet("""
-                QPushButton {
-                    font-size: 16px;
-                    background-color: #5a5a5a;
-                    color: white;
-                    border-radius: 8px;
-                    border: 1px solid #7a7a7a;
-                    padding: 5px;
-                }
-                QPushButton:hover {
-                    background-color: #6a6a6a;
-                    border: 1px solid #8a8a8a;
-                }
-                QPushButton:pressed {
-                    background-color: #4a4a4a;
-                }
-            """)
-            self.remove_start_button.clicked.connect(self.remove_start)
-            layout.addWidget(self.remove_start_button)
+        self.next_solution_button = QPushButton("Next Solver", self.bottom_panel)
+        self.next_solution_button.setFixedSize(150, 50)
+        self.next_solution_button.setStyleSheet(self.view_solution_button.styleSheet())
+        self.next_solution_button.clicked.connect(self.show_next_solution)
+        layout.addWidget(self.next_solution_button)
 
+    def _calculate_solutions(self):
+        """Calcula y prepara todas las soluciones únicas"""
+        solver = MazeSolver(self.maze)
+        solver.solve()
+        
+        # Obtener todas las rutas y eliminar duplicados
+        raw_paths = solver.get_paths()
+        unique_paths = []
+        seen_paths = set()
+        
+        for path, length in raw_paths:
+            # Convertir a tupla de coordenadas ordenadas para comparación
+            path_key = tuple(sorted((x, y) for x, y in path))
+            
+            if path_key not in seen_paths:
+                seen_paths.add(path_key)
+                unique_paths.append((path, length))
+        
+        # Ordenar por longitud y luego por orden de descubrimiento
+        self.solutions = sorted(unique_paths, key=lambda x: (x[1], len(x[0])))
+        self.current_solution_index = -1
+
+    def show_shortest_solution(self):
+        """Muestra la solución más corta"""
+        if not self.solutions:
+            QMessageBox.information(self, "No Solutions", "No solutions found for this maze.")
+            return
+
+        self._clear_solution()
+        self.current_solution_index = 0
+        self._display_solution(self.solutions[self.current_solution_index][0])
+        self._show_solution_info()
+
+    def show_next_solution(self):
+        """Muestra la siguiente solución única de forma confiable"""
+        if not self.solutions:
+            QMessageBox.information(self, "No Solutions", "No solutions found for this maze.")
+            return
+
+        # Limpiar solución anterior
+        self._clear_solution()
+
+        # Calcular el próximo índice de manera segura
+        next_index = self.current_solution_index + 1
+        
+        # Verificar si hemos excedido el número de soluciones
+        if next_index >= len(self.solutions):
+            next_index = 0  # Volver al inicio
+            
+        # Actualizar el índice y mostrar la solución
+        self.current_solution_index = next_index
+        path_to_show = self.solutions[self.current_solution_index][0]
+        self._display_solution(path_to_show)
+        self.is_showing_solution = True  # Asegurar que esta bandera se actualice
+        
+        # Forzar actualización de la interfaz
+        self.scene.update()
+        QApplication.processEvents()
+        
+        # Mostrar información de la solución actual
+        self._show_solution_info()
+
+    def _show_solution_info(self):
+        """Muestra información detallada en consola y UI"""
+        if not self.solutions or self.current_solution_index < 0:
+            return
+        
+        total = len(self.solutions)
+        current = self.current_solution_index + 1
+        length = self.solutions[self.current_solution_index][1]
+        
+        # Actualizar label en la interfaz
+        if hasattr(self, 'solution_info_label'):
+            self.solution_info_label.setText(f"Solution {current}/{total} - Steps: {length}")
+    
+    def _display_solution(self, path):
+        """Visualización mejorada con colores distintos para cada solución"""
+        if not path:
+            return
+
+        # Omitir punto de inicio y meta
+        path_to_draw = path[1:-1] if len(path) > 2 else []
+
+        # Color basado en el índice de solución
+        colors = [
+            Qt.GlobalColor.green,    # Primera solución (más corta)
+            Qt.GlobalColor.red
+        ]
+        color = colors[self.current_solution_index % len(colors)]
+
+        for row, col in path_to_draw:
+            solution_pixmap = QPixmap(self.cell_size, self.cell_size)
+            solution_pixmap.fill(color)
+            
+            item = QGraphicsPixmapItem(solution_pixmap)
+            opacity_effect = QGraphicsOpacityEffect()
+            opacity_effect.setOpacity(0.4)  # Un poco más visible
+            item.setGraphicsEffect(opacity_effect)
+            item.setPos(col * self.cell_size, row * self.cell_size)
+            self.scene.addItem(item)
+            self.solution_items.append(item)
+
+    def _clear_solution(self):
+        """Elimina la solución mostrada actualmente"""
+        for item in self.solution_items:
+            self.scene.removeItem(item)
+        self.solution_items.clear()
+        self.is_showing_solution = False
+    
     def _setup_player(self):
         """Configura el personaje del jugador"""
         if not self.start_point:
@@ -410,14 +523,17 @@ class MazeWidget(QWidget):
             self.stop_animation_timer.start(200)  # Tiempo para completar el ciclo (200ms)
             
     def remove_start(self):
+        """Sobreescribimos para limpiar también las soluciones"""
         if self.start_point is None:
             QMessageBox.information(self, "Oops!", "You haven't placed a start point yet!")
         else:
             row, col = self.start_point
-            self.maze[row][col] = MazeGenerator.PATH  # Vuelve a ser camino
+            self.maze[row][col] = MazeGenerator.PATH
             self._render_cell(row, col)
             self.start_point = None
             self.selecting_start_point = True
+            self._clear_solution()
+            self._calculate_solutions()  # Recalcular soluciones
   
     def _set_background(self):
         """Configura el fondo con bg_maze.png"""
@@ -475,12 +591,15 @@ class MazeWidget(QWidget):
                     old_row, old_col = self.start_point
                     self.maze[old_row][old_col] = MazeGenerator.PATH
                     self._render_cell(old_row, old_col)
-                
+                self._clear_solution()
                 # Establecer nuevo punto de inicio
                 self.start_point = (row, col)
                 self.maze[row][col] = MazeGenerator.START
                 self._render_cell(row, col)
                 self.selecting_start_point = False
+                
+                # Calcular soluciones posibles
+                self._calculate_solutions()
             else:
                 QMessageBox.warning(self, "Invalid Cell", 
                                 "Cannot place start on a wall or shortcut.")

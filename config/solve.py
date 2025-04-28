@@ -1,14 +1,14 @@
 class MazeSolver:
     def __init__(self, maze):
-        self.maze = [row[:] for row in maze]  # Make a copy to avoid side effects
+        self.maze = [row[:] for row in maze]  # Copia del laberinto
         self.rows = len(maze)
         self.cols = len(maze[0])
         self.goal = None
         self.start = None
         self.all_paths = []
         self.visited = [[False for _ in range(self.cols)] for _ in range(self.rows)]
-        self.shortest_path = None  # Track the shortest path
-        self.directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]  # Up, left, down, right
+        self.shortest_path = None
+        self.directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]  # Arriba, izquierda, abajo, derecha
 
     def solve(self):
         self._find_start_goal()
@@ -16,19 +16,14 @@ class MazeSolver:
             print("Start or goal not found.")
             return self.maze
 
-        # Initialize backtracking search
+        # Inicializar búsqueda
         sx, sy = self.start
         self.visited[sx][sy] = True
-        self._backtrack(sx, sy, [(sx, sy)])  # Start the path with the start position
+        self._backtrack(sx, sy, [(sx, sy)])
 
         if not self.shortest_path:
             print("No path found.")
             return self.maze
-
-        
-        for x, y in self.shortest_path:
-            if self.maze[x][y] != 4 and self.maze[x][y] != 3:  #start and goal 
-                self.maze[x][y] = 5
 
         return self.maze
 
@@ -36,37 +31,33 @@ class MazeSolver:
         return self.all_paths
 
     def _find_start_goal(self):
+        """Encuentra inicio (3) y meta (4) en el laberinto"""
         for i in range(self.rows):
             for j in range(self.cols):
-                if self.maze[i][j] == 4:  # Start point
+                if self.maze[i][j] == 3:  # Punto de inicio
                     self.start = (i, j)
-                elif self.maze[i][j] == 3:  # Goal point
+                elif self.maze[i][j] == 4:  # Punto de meta
                     self.goal = (i, j)
 
     def _backtrack(self, x, y, path):
+        """Algoritmo de backtracking mejorado para encontrar todas las rutas posibles"""
         if (x, y) == self.goal:
-            self.all_paths.append((list(path), len(path)))
-            
-            if self.shortest_path is None or len(path) < len(self.shortest_path):
-                self.shortest_path = list(path)  # Update the shortest path
+            # Solo añadir si es una ruta nueva y válida
+            if path not in [p[0] for p in self.all_paths]:
+                self.all_paths.append((list(path), len(path)))
+                
+                if self.shortest_path is None or len(path) < len(self.shortest_path):
+                    self.shortest_path = list(path)
             return
 
-        # Explore all possible directions
+        # Explorar todas las direcciones posibles
         for dx, dy in self.directions:
             nx, ny = x + dx, y + dy
             if 0 <= nx < self.rows and 0 <= ny < self.cols: 
-                if self.maze[nx][ny] in [0, 2, 3] and not self.visited[nx][ny]:  # Valid path or goal
+                # Celdas por las que se puede pasar: camino (1), atajo (2), inicio (3) o meta (4)
+                if self.maze[nx][ny] in [1, 2, 3, 4] and not self.visited[nx][ny]:
                     self.visited[nx][ny] = True
-                    path.append((nx, ny))  # Add this position to the current path
-                    self._backtrack(nx, ny, path)  # Recursively explore further
-                    path.pop()  # Backtrack (remove the last position)
+                    path.append((nx, ny))
+                    self._backtrack(nx, ny, path)
+                    path.pop()
                     self.visited[nx][ny] = False
-
-
-
-
-
-
-
-
-
