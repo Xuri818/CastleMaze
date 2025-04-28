@@ -9,14 +9,26 @@ from config.game_config import GameConfig
 from config.Generate import MazeGenerator
 from config.atlas_loader import AtlasLoader
 from config.solve import MazeSolver
+import os
+import json
+from datetime import datetime
+
 
 class MazeWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, loaded_maze=None):
         super().__init__(parent)
         self._initialize_properties(parent)
-        self._setup_timers()
-        self._setup_ui()
-        self._generate_and_render_maze()
+        
+        # Si se proporciona un laberinto cargado, usaremos ese
+        if loaded_maze is not None:
+            self.maze = loaded_maze['map']
+            self.rows = loaded_maze['rows']
+            self.cols = loaded_maze['cols']
+            self.start_point = loaded_maze['start_point']
+            self.goal_point = loaded_maze['goal_point']
+            self._setup_loaded_maze()
+        else:
+            self._generate_and_render_maze()
         
         if self.game_mode == 'Classic':
             self._setup_player()
@@ -41,8 +53,20 @@ class MazeWidget(QWidget):
         self.current_frame = "down_standing"
         self.movement_frames = []
         self.goal_reached = False
+        self.solved = False
         self.selecting_start_point = self.game_mode == "Solver"
         self.start_point = None
+   
+    def _setup_loaded_maze(self):
+        """Configura la vista usando un laberinto cargado"""
+        self._setup_ui()
+        self._render_full_maze()
+        self.selecting_start_point = False
+    def _render_full_maze(self):
+        """Redibuja toda la matriz actual"""
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self._render_cell(row, col)
 
     def _setup_timers(self):
         """Configura los temporizadores necesarios"""
@@ -97,12 +121,14 @@ class MazeWidget(QWidget):
         # Botones comunes
         self._create_button("View Solver", self.show_shortest_solution, layout)
         self._create_button("Next Solver", self.show_next_solution, layout)
+        self._create_button("Save Map", lambda: self.save_map_solution(), layout)
         
         # Botón específico para modo Solver
         if self.game_mode == 'Solver':
             self._create_button("Reset Start", self.remove_start, layout)
             
         self._create_button("Back to Menu", self._go_back, layout)
+
 
     def _create_button(self, text, callback, layout):
         """Crea un botón estandarizado y lo añade al layout"""
@@ -255,6 +281,7 @@ class MazeWidget(QWidget):
         self._clear_solution()
         self.current_solution_index = 0
         self._display_solution(self.solutions[self.current_solution_index][0])
+        self.solved = True
 
     def show_next_solution(self):
         """Muestra la siguiente solución única"""
@@ -263,9 +290,11 @@ class MazeWidget(QWidget):
             return
 
         self._clear_solution()
+        self.solved = True
         self.current_solution_index = (self.current_solution_index + 1) % len(self.solutions)
         self._display_solution(self.solutions[self.current_solution_index][0])
         self.scene.update()
+
         QApplication.processEvents()
 
     def _display_solution(self, path):
@@ -295,6 +324,54 @@ class MazeWidget(QWidget):
             self.scene.removeItem(item)
         self.solution_items.clear()
         self.is_showing_solution = False
+    
+    # ==================== SAVE MAP LOGIC ==================== #
+
+    def save_map_solution(self, file_path=None):
+        """Guarda el mapa actual y datos relevantes en un archivo JSON."""
+        if not self.start_point:
+            QMessageBox.warning(self, "Error", "No hay un punto de inicio para guardar.")
+            return
+        if not self.maze:
+            QMessageBox.warning(self, "Error", "No hay un laberinto generado para guardar.")
+            return
+
+    # Definir ruta por defecto si no se proporciona
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Ejemplo: 20230428_093145
+        file_name = f"saved_map_{timestamp}.json"
+        file_path = os.path.join(os.getcwd(), "config", file_name)
+
+        # Preparar los datos para guardar
+        data_to_save = {
+            "map": self.maze,  # La matriz del laberinto
+            "game_mode": self.game_mode,
+            "start_point": self.start_point,
+            "goal_point": self._get_goal_point(),  # Buscar posición del GOAL
+            "rows": self.rows,
+            "cols": self.cols
+        }
+
+
+        try:
+        # Guardar datos en formato JSON
+            with open(file_path, "w") as file:
+                json.dump(data_to_save, file, indent=4)
+            QMessageBox.information(self, "Guardado exitoso", f"El laberinto se guardó en {file_path}.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo guardar el archivo: {e}")
+
+    def _get_goal_point(self):
+        """Busca y retorna la posición de la meta (GOAL) en el laberinto."""
+        for r in range(self.rows):
+            for c in range(self.cols):
+                if self.maze[r][c] == MazeGenerator.GOAL:
+                    return (r, c)
+        return None
+    
+    def get_maze_size(self):
+        return self.rows, self.cols
+        
+    
 
     # ==================== PLAYER METHODS ====================
     def _setup_player(self):
@@ -369,7 +446,7 @@ class MazeWidget(QWidget):
     # ==================== EVENT HANDLERS ====================
     def keyPressEvent(self, event: QKeyEvent):
         """Maneja el movimiento del jugador con teclado"""
-        if self.game_mode != 'Classic' or not self.player or self.goal_reached:
+        if self.game_mode != 'Classic' or not self.player or self.goal_reached or self.solved:
             return
             
         if self.should_stop_animating:

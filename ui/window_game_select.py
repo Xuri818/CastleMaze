@@ -1,10 +1,21 @@
 from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QGraphicsOpacityEffect,
+    QFrame, QLabel, QPushButton, QGraphicsView, QApplication,
+    QGraphicsScene, QGraphicsPixmapItem, QMessageBox
+)
+from PyQt6.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, 
     QHBoxLayout, QLabel, QSpacerItem, 
     QSizePolicy
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QPalette
+
+from PyQt6.QtCore import Qt, QRectF, QTimer, QPointF
+from PyQt6.QtGui import QPixmap, QPalette, QTransform, QPainter, QKeyEvent
+from ui.window_maze import MazeWidget
+from PyQt6.QtWidgets import QFileDialog
+import os
+import json
+from config.game_config import GameConfig
 
 class GameSelectWidget(QWidget):
     def __init__(self, parent=None):
@@ -136,6 +147,7 @@ class GameSelectWidget(QWidget):
         
         # Conectar señal del botón New Game
         self.new_game_button.clicked.connect(self._start_new_game)
+        self.load_maze_button.clicked.connect(self._load_game)
         
         # Estilo para el botón de regresar (gris)
         self.back_button.setStyleSheet("""
@@ -158,6 +170,36 @@ class GameSelectWidget(QWidget):
     
     def _start_new_game(self):
         self.parent_window.setCurrentIndex(3)    # Ve a selección de tamaño
+
+
+
+    from PyQt6.QtWidgets import QFileDialog
+
+    def _load_game(self):
+        """Muestra un cuadro de diálogo para seleccionar un mapa guardado."""
+        options = QFileDialog.Option.ReadOnly
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, 
+            "Seleccionar archivo de mapa", 
+            "", 
+            "Archivos JSON (*.json);;Todos los archivos (*)", 
+            options=options
+        )
+
+
+        if file_path:
+            try:
+                with open(file_path, "r") as file:
+                    # Cargar el laberinto: asumimos que es una lista de listas de enteros
+                    import json
+                    maze_data = json.load(file)
+            
+                # Pedimos a la ventana principal que cargue el laberinto
+                if self.parent_window:
+                    self.parent_window.load_saved_maze(maze_data)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to load maze: {e}")
+
             
     def _go_back(self):
         if self.parent_window:

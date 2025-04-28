@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QStackedWidget
+from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QIcon  # Importar QIcon
 from ui.window_intro import IntroWidget
 from ui.window_game_mode import GameModeWidget
@@ -24,6 +24,7 @@ class MainWindow(QStackedWidget):
         self.game_select_widget = GameSelectWidget(self)
         self.size_select_widget = SizeSelectWidget(self)
         self.maze_widget = None
+
         
         # Configurar conexión de señales ANTES de añadir widgets
         self.size_select_widget.start_game_signal.connect(self._create_maze_widget)
@@ -33,6 +34,8 @@ class MainWindow(QStackedWidget):
         self.addWidget(self.game_mode_widget)    # Índice 1
         self.addWidget(self.game_select_widget)  # Índice 2
         self.addWidget(self.size_select_widget)  # Índice 3
+       
+
         
         # Mostrar pantalla inicial
         self.setCurrentWidget(self.intro_widget)
@@ -61,13 +64,31 @@ class MainWindow(QStackedWidget):
             GameConfig.get_maze_size()
             
             # Crear nueva instancia
-            self.maze_widget = MazeWidget(self)
+            self.maze_widget = MazeWidget(self, loaded_maze=None)
             self.addWidget(self.maze_widget)
             self.setCurrentIndex(4)
             
         except ValueError as e:
             print(f"Error de configuración: {e}")
             self.setCurrentIndex(0)
+
+    def load_saved_maze(self, maze_data):
+        """Carga un laberinto guardado y muestra MazeWidget"""
+        try:
+            self.handle_maze_widget_cleanup()
+        
+            # Aquí no necesitas pedir modo o tamaño: ya viene dado.
+            GameConfig.set_game_mode(maze_data['game_mode'])
+            GameConfig.set_maze_size(maze_data['rows'])
+            self.maze_widget = MazeWidget(self, loaded_maze=maze_data)
+
+            self.addWidget(self.maze_widget)
+            self.setCurrentIndex(4)
+        
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to initialize maze: {e}")
+            self.setCurrentIndex(0)
+
 
 def main():
     app = QApplication(sys.argv)
