@@ -13,7 +13,6 @@ class MazeSolver:
     def solve(self):
         self._find_start_goal()
         if not self.start or not self.goal:
-            print("Start or goal not found.")
             return self.maze
 
         # Inicializar búsqueda
