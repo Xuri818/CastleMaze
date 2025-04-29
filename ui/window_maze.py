@@ -3,7 +3,8 @@ from PyQt6.QtWidgets import (
     QFrame, QLabel, QPushButton, QGraphicsView, QApplication,
     QGraphicsScene, QGraphicsPixmapItem, QMessageBox
 )
-from PyQt6.QtCore import Qt, QRectF, QTimer, QPointF
+
+from PyQt6.QtCore import *
 from PyQt6.QtGui import QPixmap, QPalette, QTransform, QPainter, QKeyEvent
 from config.game_config import GameConfig
 from config.Generate import MazeGenerator
@@ -12,34 +13,38 @@ from config.solve import MazeSolver
 import os
 import json
 from datetime import datetime
+import random
 
 
 class MazeWidget(QWidget):
     def __init__(self, parent=None, loaded_maze=None):
         super().__init__(parent)
-        self._initialize_properties(parent)
+        self._initialize_properties(parent, loaded_maze)
+        self._setup_timers()
+        self._setup_ui()
         
-        # Si se proporciona un laberinto cargado, usaremos ese
-        if loaded_maze is not None:
-            self.maze = loaded_maze['map']
-            self.rows = loaded_maze['rows']
-            self.cols = loaded_maze['cols']
-            self.start_point = loaded_maze['start_point']
-            self.goal_point = loaded_maze['goal_point']
-            self._setup_loaded_maze()
-        else:
+        if self.loaded_maze == None:
             self._generate_and_render_maze()
+        else:
+            self.create_and_render_maze()
+
         
         if self.game_mode == 'Classic':
             self._setup_player()
             self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
+
     # ==================== INITIALIZATION METHODS ====================
-    def _initialize_properties(self, parent):
+    def _initialize_properties(self, parent, loaded_maze):
         """Inicializa todas las propiedades de la clase"""
         self.parent_window = parent
+        self.loaded_maze = loaded_maze
+
+        
         self.game_mode = GameConfig.get_game_mode()
+        
         self.maze_size = GameConfig.get_maze_size()
+
         self.atlas_loader = AtlasLoader()
         self.cell_size = 48
         self.scale_factor = 1.0
@@ -47,6 +52,7 @@ class MazeWidget(QWidget):
         self.current_solution_index = -1
         self.solution_items = []
         self.is_showing_solution = False
+        self.showing_backtracking_animation = False
         self.should_stop_animating = False
         self.is_moving = False
         self.animation_frame_index = 0
@@ -57,17 +63,7 @@ class MazeWidget(QWidget):
         self.selecting_start_point = self.game_mode == "Solver"
         self.start_point = None
    
-    def _setup_loaded_maze(self):
-        """Configura la vista usando un laberinto cargado"""
-        self._setup_ui()
-        self._render_full_maze()
-        self.selecting_start_point = False
-    def _render_full_maze(self):
-        """Redibuja toda la matriz actual"""
-        for row in range(self.rows):
-            for col in range(self.cols):
-                self._render_cell(row, col)
-
+ 
     def _setup_timers(self):
         """Configura los temporizadores necesarios"""
         self.animation_timer = QTimer()
@@ -177,6 +173,42 @@ class MazeWidget(QWidget):
             self._render_start_point()
         
         QTimer.singleShot(100, self._adjust_view)
+    
+    def create_and_render_maze(self):
+        self.maze = self.loaded_maze['map']
+        self.rows = self.loaded_maze['rows']
+        self.cols = self.loaded_maze['cols']
+        self.maze_width = self.cols * self.cell_size
+        self.maze_height = self.rows * self.cell_size
+
+        if self.game_mode == 'Classic':
+            # Buscar la posición donde está el número 4 en self.maze
+            for i in range(len(self.maze)):
+                for j in range(len(self.maze[i])):
+                    if self.maze[i][j] == 3:
+                        self.maze[i][j] = 1  
+                        break 
+           
+            self.start_point = (random.randint(1, len(self.maze) - 2), random.randint(1, len(self.maze[0]) - 2))
+            self.maze[self.start_point[0]][self.start_point[1]] = 3  # Colocar el 4 en la nueva posición
+            self._calculate_solutions()
+            self.selecting_start_point = False
+            self._render_start_point()
+
+
+        self.scene.clear()
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self._render_cell(row, col)
+        
+
+        if self.game_mode == 'Solver':
+            self.start_point = self.loaded_maze['start_point']
+            self._render_start_point()
+            self.selecting_start_point = False
+            self._calculate_solutions()
+
+        QTimer.singleShot(100, self._adjust_view)
 
     def _render_cell(self, row, col):
         """Renderiza una celda individual del laberinto"""
@@ -278,15 +310,102 @@ class MazeWidget(QWidget):
             QMessageBox.information(self, "No Solutions", "No solutions found for this maze.")
             return
 
+        if self.game_mode == 'Classic':
+            self.showing_backtracking_animation = True
+            self.show_backtracking_animation(self.maze)
+
+        else:
+            self._clear_solution()
+            self.current_solution_index = 0
+            self._display_solution(self.solutions[self.current_solution_index][0])
+            self.solved = True
+
+
+    def show_backtracking_animation(self, maze):
+        """Muestra la animación del backtracking en la interfaz gráfica"""
         self._clear_solution()
-        self.current_solution_index = 0
-        self._display_solution(self.solutions[self.current_solution_index][0])
-        self.solved = True
+        showmaze = [row[:] for row in maze]  # Copia del laberinto
+
+        path_steps = []
+        directions = [(-1, 0), (0, -1), (1, 0), (0, 1)] 
+        
+        visited = []
+        for _ in range(self.rows):
+            row = []
+            for _ in range(self.cols):
+                row.append(False)
+            visited.append(row)
+
+        def backtrack(x, y, path):
+
+            
+            if (x, y) == self._get_goal_point():
+                return
+
+            for dx, dy in directions:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.rows and 0 <= ny < self.cols:
+                    if showmaze[nx][ny] in [1, 2, 3, 4] and not visited[nx][ny]:
+                        visited[nx][ny] = True
+                        path.append((nx, ny))
+
+                        # Marcar exploración
+                        self.update_ui(nx, ny, "*")
+                        QCoreApplication.processEvents()
+                        QThread.msleep(100)  # Velocidad de la animación
+
+                        backtrack(nx, ny, path)
+
+                        # Retroceso
+                        path.pop()
+                        visited[nx][ny] = False
+
+                        self.update_ui(nx, ny, "-")
+                        QCoreApplication.processEvents()
+                        QThread.msleep(100)
+
+        sx, sy = self.start_point
+        visited[sx][sy] = True
+        backtrack(sx, sy, [(sx, sy)])
+        self.showing_backtracking_animation = False
+
+    def update_ui(self, x, y, status):
+        """Actualiza visualmente una celda en el laberinto según su estado."""
+        # Define los colores para cada estado del backtracking
+        if status == "*":  # Exploración
+            color = Qt.GlobalColor.blue
+        elif status == "-":  # Retroceso
+            color = Qt.GlobalColor.white
+        elif status == 3:  # Inicio
+            color = Qt.GlobalColor.green
+        elif status == 4:  # Meta
+            color = Qt.GlobalColor.red
+        else:  # Muros o caminos normales
+            color = Qt.GlobalColor.white
+
+        # Crear el elemento visual de la celda
+        cell_pixmap = QPixmap(self.cell_size, self.cell_size)
+        cell_pixmap.fill(color)
+
+        item = QGraphicsPixmapItem(cell_pixmap)
+        opacity_effect = QGraphicsOpacityEffect()
+        opacity_effect.setOpacity(0.6 if status in ("*", "-") else 1.0)  # Opacidad para progresión
+        item.setGraphicsEffect(opacity_effect)
+
+        #    Ajustar posición en el gráfico
+        item.setPos(y * self.cell_size, x * self.cell_size)
+        self.scene.addItem(item)
+
+        # Añadir el item a una lista si necesitas limpiar después
+        self.solution_items.append(item)
 
     def show_next_solution(self):
         """Muestra la siguiente solución única"""
         if not self.solutions:
             QMessageBox.information(self, "No Solutions", "No solutions found for this maze.")
+            return
+        
+        if self.showing_backtracking_animation == True:
             return
 
         self._clear_solution()
@@ -302,8 +421,13 @@ class MazeWidget(QWidget):
         if not path or len(path) <= 2:
             return
 
-        colors = [Qt.GlobalColor.green, Qt.GlobalColor.red]
-        color = colors[self.current_solution_index % len(colors)]
+        colors = [Qt.GlobalColor.green, Qt.GlobalColor.red, Qt.GlobalColor.darkBlue]
+        if self.current_solution_index == 0:
+            color = colors[0]
+        elif self.current_solution_index == len(self.solutions) - 1:
+            color = colors[1]
+        else:
+            color = colors[2]
 
         for row, col in path[1:-1]:
             solution_pixmap = QPixmap(self.cell_size, self.cell_size)
@@ -338,8 +462,8 @@ class MazeWidget(QWidget):
 
     # Definir ruta por defecto si no se proporciona
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Ejemplo: 20230428_093145
-        file_name = f"saved_map_{timestamp}.json"
-        file_path = os.path.join(os.getcwd(), "config", file_name)
+        file_name = f"Map_{self.game_mode}_{timestamp}.json"
+        file_path = os.path.join(os.getcwd(), "savegames", file_name)
 
         # Preparar los datos para guardar
         data_to_save = {

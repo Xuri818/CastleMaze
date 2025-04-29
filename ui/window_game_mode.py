@@ -202,6 +202,7 @@ class GameModeWidget(QWidget):
     
     def _go_to_game_select(self, game_mode):
         GameConfig.set_game_mode(game_mode)
+        print(GameConfig._game_mode)
         self.parent_window.setCurrentIndex(2)
         
     def _go_back(self):

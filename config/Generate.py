@@ -23,7 +23,12 @@ class MazeGenerator:
             cols += 1
 
         # Inicializar el laberinto completamente como muros
-        maze = [[cls.WALL for _ in range(cols)] for _ in range(rows)]
+        maze = []
+        for i in range(rows):
+            row = []
+            for j in range(cols):
+                row.append(cls.WALL)
+            maze.append(row)
 
         # Empezar en (1,1)
         maze[1][1] = cls.PATH
@@ -160,7 +165,6 @@ class MazeGenerator:
         r, c = goal_pos
         maze[r][c] = cls.GOAL
 
-        # Opcional: podrías guardar la posición si quieres
         cls.goal_position = goal_pos  # ejemplo: cls.goal_position para referenciarla después
         
     @classmethod

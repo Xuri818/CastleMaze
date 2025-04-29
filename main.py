@@ -64,7 +64,7 @@ class MainWindow(QStackedWidget):
             GameConfig.get_maze_size()
             
             # Crear nueva instancia
-            self.maze_widget = MazeWidget(self, loaded_maze=None)
+            self.maze_widget = MazeWidget(self)
             self.addWidget(self.maze_widget)
             self.setCurrentIndex(4)
             
@@ -78,7 +78,6 @@ class MainWindow(QStackedWidget):
             self.handle_maze_widget_cleanup()
         
             # Aquí no necesitas pedir modo o tamaño: ya viene dado.
-            GameConfig.set_game_mode(maze_data['game_mode'])
             GameConfig.set_maze_size(maze_data['rows'])
             self.maze_widget = MazeWidget(self, loaded_maze=maze_data)
 

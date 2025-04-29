@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import QFileDialog
 import os
 import json
 from config.game_config import GameConfig
+from PyQt6.QtWidgets import QFileDialog
 
 class GameSelectWidget(QWidget):
     def __init__(self, parent=None):
@@ -170,10 +171,6 @@ class GameSelectWidget(QWidget):
     
     def _start_new_game(self):
         self.parent_window.setCurrentIndex(3)    # Ve a selección de tamaño
-
-
-
-    from PyQt6.QtWidgets import QFileDialog
 
     def _load_game(self):
         """Muestra un cuadro de diálogo para seleccionar un mapa guardado."""

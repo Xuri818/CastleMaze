@@ -6,7 +6,12 @@ class MazeSolver:
         self.goal = None
         self.start = None
         self.all_paths = []
-        self.visited = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+        self.visited = []
+        for _ in range(self.rows):
+            row = []
+            for _ in range(self.cols):
+                row.append(False)
+            self.visited.append(row)
         self.shortest_path = None
         self.directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]  # Arriba, izquierda, abajo, derecha
 
