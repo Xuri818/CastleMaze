@@ -1,44 +1,47 @@
 # 🏰 CastleMaze
 
-**CastleMaze** es un proyecto desarrollado como parte del curso **Análisis de Algoritmos** (I semestre, 2025) en el **Tecnológico de Costa Rica**, por los estudiantes **Emilio Funes** y **David Calvo**, de la carrera de **Ingeniería en Computación**.
+**CastleMaze** es una aventura de ingenio ambientada en un oscuro laberinto medieval, donde el jugador debe desafiar los muros, explorar caminos ocultos y escapar de una trampa ancestral. Cada partida es única: los pasillos cambian, los atajos aparecen donde antes solo había piedra, y la salida nunca está garantizada. ¿Lograrás encontrar la ruta correcta o te perderás en la oscuridad?
 
 ## 🎯 Descripción
 
-CastleMaze es un juego de laberinto con temática medieval, implementado en **Python 3.13** utilizando **PyQt6** como interfaz gráfica. El objetivo principal del proyecto es aplicar algoritmos de generación y resolución de laberintos, con un enfoque especial en el uso de **backtracking recursivo**.
+CastleMaze está desarrollado en **Python 3.13** utilizando **PyQt6 6.7.0** para la construcción de una interfaz gráfica moderna e interactiva. El núcleo del juego se basa en dos algoritmos fundamentales:
+
+- **Depth-First Search (DFS)**: utilizado para generar laberintos perfectos, donde existe una única ruta entre dos puntos.
+- Posteriormente, se aplica una **función de "ruptura de muros"**, que introduce atajos estratégicos y transforma el laberinto en una estructura imperfecta, agregando múltiples rutas posibles y mayor desafío.
+- **Backtracking**: empleado para encontrar todas las soluciones válidas desde el punto de inicio hasta la meta, identificando además la ruta más corta.
+
+Esta combinación algorítmica no solo asegura partidas dinámicas, sino que también refuerza el enfoque analítico detrás del diseño del juego.
 
 ## 🧠 Características principales
 
-- 🔄 **Laberintos dinámicos**: se generan aleatoriamente cada vez que se inicia una partida.
-- 📐 **Tamaños configurables**: 
-  - 5x5  
-  - 10x10  
-  - 15x15  
-  - 20x20  
-  - 25x25  
-- 🛠️ **Generación con Backtracking**: crea laberintos tipo "perfect maze" (una única solución).
+- 🔄 **Laberintos dinámicos**: se generan aleatoriamente en cada partida.
+- 📐 **Tamaños configurables**:
+  - Easy: 11x11
+  - Standard: 17x17
+  - Hard: 21x21
+  - Extreme: 27x27
+    
 - 🧭 **Resolución automatizada**:
-  - Autoresolución del laberinto.
-  - Visualización de **rutas alternativas**.
-  - Visualización de la **ruta óptima** a la salida.
+  - Visualización paso a paso de **backtracking** y la **ruta óptima**.
 
-## 🎨 Temática
-
-La ambientación está inspirada en castillos medievales. El jugador debe abrirse paso a través de pasillos oscuros y muros de piedra para escapar del laberinto.
-
-## 🚀 Tecnologías utilizadas
-
-- Python 3.13
-- PyQt6
-
-## 📚 Objetivo académico
-
-Este proyecto forma parte del curso de Análisis de Algoritmos, con el propósito de aplicar algoritmos clásicos (como backtracking) en problemas reales y visuales, fomentando el pensamiento computacional y el diseño de interfaces interactivas.
+- 🎮 **Modos de juego**:
+  - **Classic Mode**: control manual del jugador con teclado.
+  - **Solver Mode**: se muestra cómo la IA resuelve el laberinto.
+    
+- 💾 **Guardado y carga de partidas**.
+  
+- 🖼️ **Renderizado con sprites** cargados desde un archivo JSON.
+  
+- 🗂️ **Estructura modular**:
+  - `config/` para algoritmos y clases.
+  - `ui/` para renderizado y texturas.
+  - `assets/` para sprites y recursos visuales.
 
 ---
 
-**Desarrollado por:**
+**Desarrollado por:**  
 - Emilio Funes  
-- David Calvo
+- David Calvo  
 
 Tecnológico de Costa Rica — Ingeniería en Computación  
 I Semestre, 2025
