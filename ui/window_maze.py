@@ -18,6 +18,14 @@ import random
 
 class MazeWidget(QWidget):
     def __init__(self, parent=None, loaded_maze=None):
+        """
+        Initializes the MazeWidget with the given parent and loaded maze.
+        If the loaded_maze parameter is None, a new maze is generated and rendered.
+        If the loaded_maze parameter is not None, the given maze is rendered.
+        Depending on the game mode, the player is set up or not.
+        The window is set to accept keyboard focus.
+        """
+        
         super().__init__(parent)
         self._initialize_properties(parent, loaded_maze)
         self._setup_timers()
@@ -36,7 +44,17 @@ class MazeWidget(QWidget):
 
     # ==================== INITIALIZATION METHODS ====================
     def _initialize_properties(self, parent, loaded_maze):
-        """Inicializa todas las propiedades de la clase"""
+        
+        """
+        Initializes the properties of the MazeWidget instance.
+
+        This method sets the parent window, the loaded maze, the game mode, the maze size, and the atlas loader.
+        It also initializes the cell size, scale factor, solutions, current solution index, solution items, and other
+        properties related to animation and movement.
+
+        Basically, this method sets up those "attributes" that will be used next in other functions, or that represents the maze.
+        """
+
         self.parent_window = parent
         self.loaded_maze = loaded_maze
 
@@ -65,7 +83,16 @@ class MazeWidget(QWidget):
    
  
     def _setup_timers(self):
-        """Configura los temporizadores necesarios"""
+        
+        """
+        This method creates two timers: one for updating the animation frame
+        and another for stopping the animation after a certain time.
+
+        The animation timer is connected to the _update_animation_frame 
+        and the stop animation timer is connected to the _complete_animation_cycle .
+
+        The timeouts are set to 100ms and 500ms respectively.
+        """
         self.animation_timer = QTimer()
         self.animation_timer.timeout.connect(self._update_animation_frame)
         self.stop_animation_timer = QTimer()
@@ -73,7 +100,15 @@ class MazeWidget(QWidget):
 
     # ==================== UI SETUP METHODS ====================
     def _setup_ui(self):
-        """Configura la interfaz de usuario principal"""
+
+        """
+    This method sets up the user interface for the maze window. It configures
+    the background, sets a fixed size for the window, and arranges the layout.
+    It adds and organizes the main components: the game area and the bottom
+    panel in a vertical layout without spacing or margins.
+
+        """
+
         self._set_background()
         self.setFixedSize(1000, 800)
         
@@ -88,7 +123,17 @@ class MazeWidget(QWidget):
         main_layout.addWidget(self.bottom_panel)
 
     def _setup_game_area(self):
-        """Configura el área de juego principal"""
+        
+        """
+        This method sets up the game area widget. It creates a frame
+        with a translucent background and adds a graphics view to it.
+        The graphics view is configured to render the graphics
+        antialiased and to ignore the horizontal and vertical scroll
+        bars. The graphics view is then added to a horizontal layout
+        in the game area frame, which is centered.
+
+        """
+
         self.game_area = QFrame(self)
         self.game_area.setStyleSheet("background-color: rgba(0, 0, 0, 0.3);")
         
@@ -106,7 +151,29 @@ class MazeWidget(QWidget):
         game_layout.addWidget(self.graphics_view)
 
     def _setup_bottom_panel(self):
-        """Configura el panel inferior con controles"""
+        
+        """
+        This method sets up the bottom panel widget. It creates a frame with a translucent dark gray
+        background and adds a horizontal layout to it. The layout is configured to center its items
+        horizontally. The method then creates buttons for common and specific actions depending on the
+        game mode and adds them to the layout, centering them horizontally. The buttons are created using
+        the _create_button method, which takes a text string, a function to connect to the button's
+        clicked signal, and the layout to add the button to. The buttons are then added to the layout
+        in the order they are created. The buttons are then added to the bottom panel frame, which is
+        then added to the main layout of the window.
+
+        The buttons are added in the following order:
+
+        * View Solver
+        * Next Solver
+        * Save Map
+        * Reset Start (only for game mode 'Solver')
+        * Back to Menu
+
+        The buttons are centered horizontally in the bottom panel and are evenly spaced. The bottom panel
+        is then added to the main layout of the window at the bottom, with no spacing or margins.
+        """
+
         self.bottom_panel = QFrame(self)
         self.bottom_panel.setStyleSheet("background-color: rgba(40, 40, 40, 0.7);")
         self.bottom_panel.setFixedHeight(120)
@@ -127,7 +194,14 @@ class MazeWidget(QWidget):
 
 
     def _create_button(self, text, callback, layout):
-        """Crea un botón estandarizado y lo añade al layout"""
+        
+        """
+    This method creates a styled QPushButton with the given text and callback, and adds it to the specified layout.
+
+    The button is styled with a specific font size, background color, text color, border radius, and border color.
+    It also has hover and pressed styles for visual feedback.
+        """
+
         button = QPushButton(text, self.bottom_panel)
         button.setFixedSize(150, 50)
         button.setStyleSheet("""
@@ -152,7 +226,16 @@ class MazeWidget(QWidget):
 
     # ==================== MAZE RENDERING METHODS ====================
     def _generate_and_render_maze(self):
-        """Genera y renderiza el laberinto completo"""
+        
+        """
+        This function generates a new maze using MazeGenerator and renders it on the QGraphicsScene.
+
+        If the game mode is Classic, it sets a random start point and calculates all possible solutions.
+        Then it clears the scene and renders each cell of the maze.
+        If a start point is set, it renders the start point.
+        Finally, it adjusts the view to fit the maze.
+        """
+
         self.maze = MazeGenerator.generate_maze()
         self.rows = len(self.maze)
         self.cols = len(self.maze[0]) if self.rows > 0 else 0
@@ -175,6 +258,17 @@ class MazeWidget(QWidget):
         QTimer.singleShot(100, self._adjust_view)
     
     def create_and_render_maze(self):
+        
+        """
+        This method renders the maze that was loaded from a file.
+
+        Sets the maze attributes from the loaded maze and clears the scene.
+        If the game mode is Classic, it sets a random start point and calculates all possible solutions.
+        Then it renders each cell of the maze.
+        If the game mode is solver, it sets the start point from the loaded maze data and renders it.
+        Finally, it adjusts the view to fit the maze.
+        """
+
         self.maze = self.loaded_maze['map']
         self.rows = self.loaded_maze['rows']
         self.cols = self.loaded_maze['cols']
@@ -211,7 +305,14 @@ class MazeWidget(QWidget):
         QTimer.singleShot(100, self._adjust_view)
 
     def _render_cell(self, row, col):
-        """Renderiza una celda individual del laberinto"""
+        
+        """
+        This method first checks if the cell value is in the sprites dictionary.
+        If it is, it renders the corresponding sprite. If the sprite information
+        is a tuple, it renders the floor first if necessary, and then renders the
+        detail sprite. Otherwise, it renders the sprite directly.
+
+        """
         cell_value = self.maze[row][col]
         sprites = {
             MazeGenerator.WALL: self._get_wall_sprite(row, col),
@@ -239,21 +340,50 @@ class MazeWidget(QWidget):
             self._add_sprite_to_scene(sprite_info, row, col)
 
     def _add_sprite_to_scene(self, sprite, row, col):
-        """Añade un sprite a la escena en la posición especificada"""
+        
+        """
+        This method adds a sprite to the QGraphicsScene at the specified row and column coordinate.
+        
+        The sprite is added to the scene as a QGraphicsPixmapItem and is positioned at the
+        specified row and column coordinate, which are multiplied by the cell size to get
+        the actual position in pixels.
+        """
+
         item = QGraphicsPixmapItem(sprite)
         item.setPos(col * self.cell_size, row * self.cell_size)
         self.scene.addItem(item)
 
     def _get_floor_sprite(self, row, col):
-        """Obtiene el sprite de piso según la posición"""
+        
+        """
+        This function returns the sprite for the floor at the specified row and column coordinate.
+        The sprite is chosen depending on the position, alternating between "floor1" and "floor2".
+        """
+       
         return self.atlas_loader.get_frame("maze", "floor1" if (row + col) % 2 == 0 else "floor2")
     
     def _get_wall_sprite(self, row, col):
-        """Obtiene el sprite de pared según la posición"""
+        
+        """
+    This function returns the sprite for the wall at the specified row and column coordinate.
+    
+    The sprite is chosen depending on the sum of the row and column indices,
+    alternating between "wall1" and "wall2".
+        """
+
         return self.atlas_loader.get_frame("maze", "wall1" if (row + col) % 2 == 0 else "wall2")
 
     def _render_start_point(self):
-        """Renderiza el punto de inicio en el laberinto"""
+        
+        """
+    This function renders the start point of the maze on the QGraphicsScene.
+
+    If a start point is set, this method gets the sprite for the start 
+    point from the atlas loader and adds it to the scene at the specified 
+    row and column coordinate of the start point.
+
+        """
+
         if self.start_point:
             row, col = self.start_point
             sprite = self.atlas_loader.get_frame("details", "stairs")
@@ -261,13 +391,36 @@ class MazeWidget(QWidget):
                 self._add_sprite_to_scene(sprite, row, col)
             
     def _set_random_start_point(self):
-        """Establece un punto de inicio aleatorio en el laberinto"""
+        
+        """
+    This method sets a random start point in the maze.
+
+    This method randomly selects a valid position inside the maze bounds
+    and sets it as the start point. The selected cell is marked as the 
+    start point by updating its value in the maze matrix.
+
+        """
+
         import random
         self.start_point = (random.randint(1, self.rows - 2), random.randint(1, self.cols - 2))
         self.maze[self.start_point[0]][self.start_point[1]] = MazeGenerator.START
 
     def _adjust_view(self):
-        """Ajusta la vista para que el laberinto ocupe el espacio adecuado"""
+        
+        """
+        This method adjusts the view of the QGraphicsView to fit the maze inside the available
+        space in the game area.
+
+        It calculates the scale factor to fit the maze in the available width and height, and
+        applies it to the view. The scale factor is multiplied by 0.95 to ensure there is a little
+        margin around the maze.
+
+        Then it sets the scene rectangle to the size of the maze and sets the size of the view
+        to the scaled size of the maze.
+
+        This method is called once the maze is rendered and the game area is resized.
+        """
+
         available_width = self.game_area.width()
         available_height = self.game_area.height()
         
@@ -288,7 +441,16 @@ class MazeWidget(QWidget):
 
     # ==================== SOLUTION METHODS ====================
     def _calculate_solutions(self):
-        """Calcula y prepara todas las soluciones únicas"""
+        
+        """
+        This method calculates all possible paths in the maze and stores them in the solutions attribute.
+
+        It uses the MazeSolver class to find all paths in the maze, and then filters out duplicate paths
+        by sorting the coordinates of each path and using a set to keep track of seen paths. The solutions
+        are then sorted by length and number of steps, and the current solution index is reset to -1.
+
+        This method is called when the maze is generated or loaded, and when the game mode is changed.
+        """
         solver = MazeSolver(self.maze)
         solver.solve()
         
@@ -305,7 +467,16 @@ class MazeWidget(QWidget):
         self.current_solution_index = -1
 
     def show_shortest_solution(self):
-        """Muestra la solución más corta"""
+        
+        """
+    This method displays the shortest solution for the current maze.
+
+    If no solutions are available, it informs the user via a message box.
+    In 'Classic' game mode, it initiates a backtracking animation.
+    In other modes, it clears the current solution, resets the solution index,
+    and displays the shortest solution path. Marks the maze as solved.
+        """
+
         if not self.solutions:
             QMessageBox.information(self, "No Solutions", "No solutions found for this maze.")
             return
@@ -313,6 +484,7 @@ class MazeWidget(QWidget):
         if self.game_mode == 'Classic':
             self.showing_backtracking_animation = True
             self.show_backtracking_animation(self.maze)
+            self.solved = True
 
         else:
             self._clear_solution()
@@ -322,7 +494,23 @@ class MazeWidget(QWidget):
 
 
     def show_backtracking_animation(self, maze):
-        """Muestra la animación del backtracking en la interfaz gráfica"""
+        
+        """
+        This method displays a backtracking animation of the maze solving process.
+
+        It clears the current solution, makes a copy of the maze, and starts a backtracking
+        search from the start point of the maze. The search is done recursively following
+        the directions given in the 'directions' variable (up, left, down, right). The
+        visited matrix is used to keep track of visited cells. For each cell visited, it
+        marks it with an asterisk (*) and waits for 100ms before continuing with the
+        search. When it reaches a dead end, it backtracks by popping the last element from
+        the path and marking the cell with a dash (-). The animation is stopped when the
+        backtracking search is finished.
+
+        This method is called when the user clicks the "View Solver" button in the
+        'Classic' game mode.
+        """
+
         self._clear_solution()
         showmaze = [row[:] for row in maze]  # Copia del laberinto
 
@@ -339,6 +527,20 @@ class MazeWidget(QWidget):
         def backtrack(x, y, path):
 
             
+            """
+            This is a recursive function that performs a backtracking search from the given cell (x, y) to the goal point.
+
+            The search is done following the directions given in the 'directions' variable (up, left, down, right). The
+            visited matrix is used to keep track of visited cells. For each cell visited, it marks it with an asterisk (*) and
+            waits for 100ms before continuing with the search. When it reaches a dead end, it backtracks by deleting the last
+            element from the path and marking the cell with a dash (-). The animation is stopped when the backtracking search
+            is finished.
+
+            This function is called from the show_backtracking_animation method and is used to display a backtracking animation
+            of the maze solving process.
+
+            """
+
             if (x, y) == self._get_goal_point():
                 return
 
@@ -370,8 +572,21 @@ class MazeWidget(QWidget):
         self.showing_backtracking_animation = False
 
     def update_ui(self, x, y, status):
-        """Actualiza visualmente una celda en el laberinto según su estado."""
-        # Define los colores para cada estado del backtracking
+        
+        """
+        This method updates the UI by adding a visual representation of a cell in the maze with a given status.
+
+        The status parameter can be one of the following values:
+
+        - "*": Exploration
+        - "-": Backtracking
+        - 3: Start
+        - 4: Goal
+
+        This method creates a QGraphicsOpacityEffect to set the opacity of the cell, and adds it to the scene.
+        If the status is "*" or "-", it sets the opacity to 0.6 to show the progression of the backtracking algorithm.
+        """
+        
         if status == "*":  # Exploración
             color = Qt.GlobalColor.blue
         elif status == "-":  # Retroceso
@@ -400,7 +615,19 @@ class MazeWidget(QWidget):
         self.solution_items.append(item)
 
     def show_next_solution(self):
-        """Muestra la siguiente solución única"""
+        
+        """
+    This method displays the next solution path in the maze.
+
+    This method cycles through the list of available solutions and displays
+    the next solution in sequence. If there are no solutions available,
+    it informs the user via a message box. The method does nothing if a 
+    backtracking animation is currently being shown. The current solution 
+    is cleared before displaying the next one. The maze is marked as solved 
+    once a solution is displayed.
+
+        """
+
         if not self.solutions:
             QMessageBox.information(self, "No Solutions", "No solutions found for this maze.")
             return
@@ -417,7 +644,21 @@ class MazeWidget(QWidget):
         QApplication.processEvents()
 
     def _display_solution(self, path):
-        """Visualiza una solución en el laberinto"""
+        
+        """
+    This function displays a visual representation of a given solution path in the maze.
+
+    This method takes a path, represented as a list of (row, col) tuples, and 
+    renders it on the scene using colored pixmaps. The path must have more 
+    than two points to be displayed. The color of the path varies based on 
+    the current solution index: green for the optimal solution, red for the 
+    worst solution, and dark blue for average solutions. Each cell in the 
+    path is rendered with a semi-transparent pixmap. The method updates the 
+    solution_items list with the rendered items and marks the solution as 
+    currently being shown.
+    
+        """
+
         if not path or len(path) <= 2:
             return
 
@@ -443,7 +684,15 @@ class MazeWidget(QWidget):
         self.is_showing_solution = True
 
     def _clear_solution(self):
-        """Elimina la solución mostrada actualmente"""
+        
+        """
+        This function clears the current solution path from the scene.
+
+        This method removes all items in the solution_items list from the scene and
+        clears the list. It also sets is_showing_solution to False, indicating that
+        there is currently no solution being displayed.
+        """
+        
         for item in self.solution_items:
             self.scene.removeItem(item)
         self.solution_items.clear()
@@ -452,10 +701,31 @@ class MazeWidget(QWidget):
     # ==================== SAVE MAP LOGIC ==================== #
 
     def save_map_solution(self, file_path=None):
-        """Guarda el mapa actual y datos relevantes en un archivo JSON."""
+        
+        """
+        This function saves the current maze and its solution to a file in JSON format.
+
+        If no file path is provided, it saves the maze in the "savegames" folder
+        with a default name in the format "Map_<game_mode>_<timestamp>.json".
+
+        The saved data includes the maze matrix, game mode, start point, goal point, and
+        the number of rows and columns in the maze.
+
+        If the start point is not set, or if a backtracking animation is being shown,
+        or if the maze has not been generated, this method does nothing and shows an
+        error message.
+
+        If the file could not be saved, it shows an error message with the exception
+        details.
+        """
+
         if not self.start_point:
             QMessageBox.warning(self, "Error", "No hay un punto de inicio para guardar.")
             return
+        
+        if self.showing_backtracking_animation == True:
+            return
+        
         if not self.maze:
             QMessageBox.warning(self, "Error", "No hay un laberinto generado para guardar.")
             return
@@ -485,21 +755,30 @@ class MazeWidget(QWidget):
             QMessageBox.critical(self, "Error", f"No se pudo guardar el archivo: {e}")
 
     def _get_goal_point(self):
-        """Busca y retorna la posición de la meta (GOAL) en el laberinto."""
+        """
+        This function searches for the position of the goal point in the maze. Since there is not any variable to store the goal point,
+        it iterates through the maze matrix to find the position of the GOAL character.
+        """
         for r in range(self.rows):
             for c in range(self.cols):
                 if self.maze[r][c] == MazeGenerator.GOAL:
                     return (r, c)
         return None
     
-    def get_maze_size(self):
-        return self.rows, self.cols
         
     
 
     # ==================== PLAYER METHODS ====================
     def _setup_player(self):
-        """Configura el personaje del jugador"""
+        
+        """
+        This method sets up the player properties and renders the player sprite on the scene.
+        
+        If the start point is not set, the method returns without doing anything.
+        It sets the player's initial position and direction to the start point's coordinates and 'down' respectively.
+        It then renders the player sprite based on the current frame.
+        Finally, it adds the player item to the scene and loads the movement frames.
+        """
         if not self.start_point:
             return
             
@@ -519,7 +798,17 @@ class MazeWidget(QWidget):
         self._load_movement_frames()
 
     def _load_movement_frames(self):
-        """Pre-carga los frames de animación para cada dirección"""
+        
+        """
+        This method loads the movement frames for the player sprite.
+
+        It creates a dictionary with all directions as keys and a list of four frames as the value.
+        The frames are: standing, movement 1, standing, movement 2 for each direction.
+
+        The frames are loaded from the atlas and stored in the self.movement_frames property.
+        The frames are then used in the _update_animation_frame method to animate the player movement.
+        """
+
         directions = ['down', 'left', 'right', 'up']
         self.movement_frames = {
             dir: [
@@ -531,7 +820,16 @@ class MazeWidget(QWidget):
         }
 
     def _update_player_position(self):
-        """Actualiza la posición visual del jugador"""
+        
+        """
+        This method updates the player item's position based on the current player coordinates.
+        
+        The method multiplies the player's row and column coordinates by the cell size to get the
+        actual position in pixels. It then sets the player item's position using the setPos method.
+        The y-coordinate is adjusted by subtracting the pixmap's height minus the cell size to align
+        the bottom of the pixmap with the bottom of the cell.
+        """
+
         player_pixmap = self.player_item.pixmap()
         if player_pixmap and not player_pixmap.isNull():
             self.player_item.setPos(
@@ -540,7 +838,21 @@ class MazeWidget(QWidget):
             )
 
     def _update_animation_frame(self):
-        """Actualiza el frame de animación durante el movimiento"""
+        
+        """
+        This method updates the animation frame of the player sprite when the player moves.
+
+        The method first checks if the player is moving and if the player item exists. 
+        If not, it stops the animation timer and resets the animation frame index to 0.
+        
+        It then gets the frames for the current direction of the player from the self.movement_frames dictionary. 
+        If the frames exist and all of them are not None, 
+        it increments the animation frame index and sets the pixmap of the player item to the next frame in the sequence.
+
+        If the animation should be stopped and the animation frame index is 0, 
+        it calls the _complete_animation_cycle method to stop the animation and reset the player pixmap to the standing frame.
+        """
+
         if not self.is_moving or not self.player_item:
             self.animation_timer.stop()
             self.animation_frame_index = 0
@@ -557,7 +869,17 @@ class MazeWidget(QWidget):
                 self._complete_animation_cycle()
 
     def _complete_animation_cycle(self):
-        """Completa el ciclo de animación antes de detenerse"""
+        
+        """
+        This method is called when the animation should be stopped.
+
+        It stops the stop animation timer and the animation timer, and sets the is_moving flag to False.
+        It then sets the pixmap of the player item to the standing frame for the current direction of the player.
+
+        This method is called from the _update_animation_frame method when the animation should be stopped and the
+        animation frame index is 0.
+        """
+
         self.stop_animation_timer.stop()
         self.is_moving = False
         self.animation_timer.stop()
@@ -569,8 +891,24 @@ class MazeWidget(QWidget):
 
     # ==================== EVENT HANDLERS ====================
     def keyPressEvent(self, event: QKeyEvent):
-        """Maneja el movimiento del jugador con teclado"""
-        if self.game_mode != 'Classic' or not self.player or self.goal_reached or self.solved:
+        
+        """
+        This method handles the key press event for the player movement.
+
+        It checks if the game is in 'Classic' mode, if the player exists, and if the goal has not been reached yet.
+        If any of these conditions are not met, it returns without doing anything.
+
+        It then checks if the animation should be stopped. If so, it stops the stop animation timer and sets the
+        should_stop_animating flag to False.
+
+        It then gets the key that was pressed and checks if it is a valid direction. If it is, it updates the player's
+        direction and position accordingly.
+
+        Finally, it calls the _handle_player_movement method to handle the player's movement.
+
+        """
+        
+        if self.game_mode != 'Classic' or not self.player or self.goal_reached or self.solved or self.showing_backtracking_animation:
             return
             
         if self.should_stop_animating:
@@ -607,7 +945,26 @@ class MazeWidget(QWidget):
         self._handle_player_movement(new_row, new_col, direction_changed)
 
     def _handle_player_movement(self, new_row, new_col, direction_changed):
-        """Maneja la lógica de movimiento del jugador"""
+       
+        """
+        This method handles the player movement.
+
+        It first checks if the player is inside the maze bounds. If not, it returns without doing anything.
+
+        It then checks if the cell at the new position is a valid path, shortcut, goal or start. If not, it returns without doing anything.
+
+        It then updates the player's row and column coordinates to the new position.
+
+        If the player has reached the goal, it sets the goal_reached flag to True and shows a message box to the user.
+
+        If the direction has changed, it renders the standing frame of the player sprite for the current direction.
+
+        If the player is not moving, it sets the is_moving flag to True and starts the animation timer.
+
+        Finally, it calls the _update_player_position method to update the player item's position on the scene.
+
+        """
+        
         if not (0 <= new_row < self.rows and 0 <= new_col < self.cols):
             return
             
@@ -636,8 +993,18 @@ class MazeWidget(QWidget):
         self._update_player_position()
 
     def keyReleaseEvent(self, event: QKeyEvent):
-        """Maneja la liberación de teclas de movimiento"""
-        if self.game_mode != 'Classic' or not self.player or self.goal_reached:
+        
+        """
+    This method handles the key release event for the player movement.
+
+    This method checks if the game is in 'Classic' mode, if the player exists, and if the goal has not been reached.
+    If any of these conditions are not met, it returns without doing anything.
+
+    If the released key corresponds to one of the movement keys (W, Up, S, Down, A, Left, D, Right),
+    it sets the should_stop_animating flag to True and starts the stop animation timer.
+        """
+
+        if self.game_mode != 'Classic' or not self.player or self.goal_reached or self.solved or self.showing_backtracking_animation:
             return
             
         if event.key() in [Qt.Key.Key_W, Qt.Key.Key_Up, Qt.Key.Key_S, Qt.Key.Key_Down, 
@@ -646,7 +1013,23 @@ class MazeWidget(QWidget):
             self.stop_animation_timer.start(200)
 
     def mousePressEvent(self, event):
-        """Maneja la selección del punto de inicio en modo Solver"""
+
+        """
+        This method handles the mouse press event for selecting the start point of the maze in Solver mode.
+
+        It first checks if the game mode is Solver and if the selecting_start_point flag is True.
+        If not, it returns without doing anything.
+
+        It then gets the position of the click in the view and scene coordinates.
+        If the click is outside the maze area or bounds, it shows a warning message and returns.
+
+        If the cell at the clicked position is not a path cell, it shows a warning message and returns.
+
+        If a start point is already set, it clears the old start point and renders the new one.
+        It then sets the start_point attribute to the new position, renders the start point, and sets selecting_start_point to False.
+        Finally, it calculates the solutions for the new start point.
+        """
+
         if GameConfig.get_game_mode() != "Solver" or not self.selecting_start_point:
             return
 
@@ -680,14 +1063,31 @@ class MazeWidget(QWidget):
         self._calculate_solutions()
 
     def resizeEvent(self, event):
-        """Reajusta la vista al cambiar tamaño de ventana"""
+        
+        """
+        This method handles the resize event of the MazeWidget.
+
+        It first calls the parent's resize event method.
+        If the MazeWidget has been initialized,
+        it adjusts the view to fit the available space in the game area.
+        """
+
         super().resizeEvent(event)
         if hasattr(self, 'scale_factor'):
             self._adjust_view()
 
     # ==================== UTILITY METHODS ====================
     def remove_start(self):
-        """Elimina el punto de inicio actual"""
+        
+        """
+        This method removes the start point from the maze.
+
+        If the start point is None, it shows a message box warning the user.
+        Otherwise, it resets the start point cell to a path cell, removes the
+        start point, and recalculates the solutions.
+
+        """
+        
         if self.start_point is None:
             QMessageBox.information(self, "Oops!", "You haven't placed a start point yet!")
         else:
@@ -700,7 +1100,15 @@ class MazeWidget(QWidget):
             self._calculate_solutions()
 
     def _set_background(self):
-        """Configura la imagen de fondo"""
+        
+        """
+        This method sets up the background for the maze widget. It tries to load
+        the image bg_maze.png from the assets folder and manages it to fit the
+        window size while maintaining its aspect. If the image is not found or
+        an error occurs during loading, a solid dark gray color is used instead.
+        The background is then sent to the back of the window.
+        """
+
         self.background = QLabel(self)
         try:
             pixmap = QPixmap("assets/bg_maze.png")
@@ -722,7 +1130,21 @@ class MazeWidget(QWidget):
         self.setPalette(palette)
 
     def _go_back(self):
-        """Maneja el evento de volver al menú"""
+        
+        """
+    This method is connected to navigate back from the current maze widget to a
+    previous screen. If a backtracking animation is running, it exits without
+    performing any action. Otherwise, it resets the game configuration and
+    attempts to call a cleanup handler in the parent window if it exists.
+    It then sets the view to a specific index in the parent window. In case of
+    an error during this process, it defaults to setting the view to the main
+    menu index.
+    
+        """
+
+        if self.showing_backtracking_animation == True:
+            return
+        
         if self.parent_window:
             try:
                 GameConfig.reset()

@@ -11,12 +11,22 @@ class SizeSelectWidget(QWidget):
     start_game_signal = pyqtSignal()
     
     def __init__(self, parent=None):
+        """
+        This init method sets up the parent window (the window it cames from, which is the main window),
+        and sets up the Ui for the size selection screen, like the background, buttons, etc.
+        """
         super().__init__(parent)
         self.parent_window = parent
         self._setup_ui()
     
     def _setup_ui(self):
         # Configurar imagen de fondo
+        """
+        This method sets up the UI for the size selection screen, like the background, buttons, etc.
+        It also connects the buttons to function with their respective parameters. 
+        If the difficult is Easy, the size is 10x10, if it's Standard, the size is 15x15, 
+        if it's Hard, the size is 20x20 and if it's Extreme, the size is 25x25
+        """
         self._set_background()
         self.setFixedSize(1000, 800)
         
@@ -82,7 +92,15 @@ class SizeSelectWidget(QWidget):
         self.extreme_button.clicked.connect(lambda: self._start_game_with_size(27))   # 25x25
     
     def _set_background(self):
-        """Configura la imagen de fondo bg_game_mode.png"""
+        
+        """
+        This method sets up the background for the window size widget. It tries to
+        load the image bg_game_mode.png from the assets folder and manages it to
+        fit the window size while maintaining its aspect. If the image is not
+        found or an error occurs during loading, a solid dark gray color is used
+        instead. The background is then sent to the back of the window.
+        """
+
         self.background = QLabel(self)
         try:
             pixmap = QPixmap("assets/bg_game_mode.png")
@@ -102,7 +120,14 @@ class SizeSelectWidget(QWidget):
             self.setPalette(palette)
     
     def _create_difficulty_button(self, text, color):
-        """Crea un botón de dificultad con estilo personalizado"""
+        
+        """
+        This method creates a button with a specific text and color, and styles it
+        with a specific font size, weight, background color, text color, border
+        radius, and border color. The button is also given a style.
+        The method returns the created button.
+        """
+
         button = QPushButton(text, self)
         button.setFixedSize(300, 80)
         button.setStyleSheet(f"""
@@ -125,17 +150,31 @@ class SizeSelectWidget(QWidget):
         return button
     
     def _lighten_color(self, hex_color, percent=10):
-        """Aclara un color hexadecimal"""
-        # Implementación simplificada - en producción usa QColor para manipulación de colores
+        """
+    This method lightens a given hex color by a specified percentage.
+    It returns the lightened color. The method uses a simplified implementation.
+
+        """
+
         return hex_color  # Retornamos el mismo color por simplicidad
     
     def _darken_color(self, hex_color, percent=20):
-        """Oscurece un color hexadecimal"""
+       
         # Implementación simplificada - en producción usa QColor para manipulación de colores
+        """
+        This method darkens a given hex color by a specified percentage.
+        It returns the darkened color. The method uses a simplified implementation.
+        """
         return hex_color  # Retornamos el mismo color por simplicidad
     
     def _style_buttons(self):
-        """Estilo para el botón de regresar"""
+        
+        """
+        This method styles the buttons in the window size widget, specifically the Back button.
+        It sets the font size, background color, text color, border radius, and border color for the button.
+        It also sets the hover and pressed styles for the button.
+        """
+        
         self.back_button.setStyleSheet("""
             QPushButton {
                 font-size: 18px;
@@ -155,9 +194,20 @@ class SizeSelectWidget(QWidget):
         """)
     
     def _start_game_with_size(self, size):
+        """
+        This method sets the maze size to the given size and emits the start game signal.
+        It is called when a difficulty button is clicked.
+        When the user clicks the difficult, automatically starts the game and shows the MazeWidget window, which is not an index it is a signal.
+        It does not directly change the current index of the parent window.
+        """
+        
         GameConfig.set_maze_size(size)
         self.start_game_signal.emit()  # Emitir señal en lugar de cambiar directamente
     
     def _go_back(self):
+        """
+        This method is called when the Back button is clicked.
+        It changes the current widget to the Game selection widget (index 2).
+        """
         if self.parent_window:
             self.parent_window.setCurrentIndex(2)  # Volver a la selección de juego

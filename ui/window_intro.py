@@ -6,11 +6,19 @@ from PyQt6.QtGui import QPixmap, QPalette, QBrush
 
 class IntroWidget(QWidget):
     def __init__(self, parent=None):
+        """
+        This init method sets up the parent window (the window it cames from, which is the main window), 
+        and sets up the Ui for the intro screen (the first screen you see when you start the game), like the background, buttons, etc.
+        """
         super().__init__(parent)
         self.parent_window = parent
         self._setup_ui()
     
     def _setup_ui(self):
+        """
+        This method sets up the Ui for the intro screen (the first screen you see when you start the game), like the background, buttons, etc.
+        Also, it connects the buttons to their respective functions.
+        """
         # Configurar imagen de fondo
         self._set_background()
         
@@ -24,6 +32,10 @@ class IntroWidget(QWidget):
         self._connect_buttons()
     
     def _set_background(self):
+        """
+        This method sets up the background for the intro screen (the first screen you see when you start the game).
+          Searching the image in the assets folder and loading the image intro.png and scaling it to fit the window size.
+        """
         try:
             pixmap = QPixmap("assets/bg_intro.png")
             if pixmap.isNull():
@@ -39,6 +51,11 @@ class IntroWidget(QWidget):
             self.setPalette(palette)
     
     def _create_and_position_buttons(self):
+
+        """
+        This method creates the buttons for the intro screen (the first screen you see when you start the game). 
+        It creates the Play, Options, and Credits buttons with fixed sizes and positions.
+        """
         # Tamaños fijos
         play_width, play_height = 200, 80
         other_width, other_height = 150, 50
@@ -72,6 +89,11 @@ class IntroWidget(QWidget):
         self._style_buttons()
     
     def _style_buttons(self):
+
+        """
+        This method styles the buttons for the intro screen (the first screen you see when you start the game).
+        It sets the font size, weight, background color, text color, border radius, and border color for the Play button.
+        It also sets the font size, background color, text color, border radius, and border color for the Options and Credits buttons.  """
         # Botón PLAY (grande y naranja/marrón)
         self.play_button.setStyleSheet("""
             QPushButton {
@@ -110,11 +132,23 @@ class IntroWidget(QWidget):
         self.credits_button.setStyleSheet(button_style)
     
     def _connect_buttons(self):
+        """
+        This method connects the signals from the buttons for the intro screen (the first screen you see when you start the game).
+        It connects the clicked signal from the Play, Options, and Credits buttons to their respective functions.
+        Currentlt it connects them to the _on_play_clicked, _on_options_clicked, and _on_credits_clicked methods.
+        Options and credits buttons are not implemented yet. 
+        """
         self.play_button.clicked.connect(self._on_play_clicked)
         self.options_button.clicked.connect(self._on_options_clicked)
         self.credits_button.clicked.connect(self._on_credits_clicked)
     
     def _on_play_clicked(self):
+        """
+        This method is called when the Play button is clicked.
+        It changes the current widget to the Game Mode selection widget (index 1).
+
+        """
+        print("Play button clicked")
         if self.parent_window:
             self.parent_window.setCurrentIndex(1)  # Cambiar al widget de Game Mode
     

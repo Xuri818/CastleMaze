@@ -20,12 +20,26 @@ from PyQt6.QtWidgets import QFileDialog
 
 class GameSelectWidget(QWidget):
     def __init__(self, parent=None):
+        """
+This init method initializes the GameSelectWidget, which is part of the UI for selecting a game.
+It sets the parent window and calls the method to set up the user interface components.
+        """
+
         super().__init__(parent)
         self.parent_window = parent
         self._setup_ui()
      
     def _setup_ui(self):
         # Configurar imagen de fondo
+        """
+    This method sets up the UI for the game selection widget. It includes
+    setting the background, fixing the size of the widget, and arranging the
+    buttons in a horizontal layout. It creates buttons for starting a new game
+    and loading an existing maze, and a back button to return to the game mode
+    selection screen. Additionally, it applies styles to the buttons and
+    connects the back button to its respective function.
+        """
+
         self._set_background()
         
         # Configurar el tamaño fijo del widget
@@ -67,7 +81,15 @@ class GameSelectWidget(QWidget):
         self.back_button.clicked.connect(self._go_back)
     
     def _set_background(self):
-        """Configura la imagen de fondo bg_game_mode.png"""
+        
+        """
+        This method sets up the background for the game selection widget. It tries to
+        load the image bg_game_mode.png from the assets folder and manages it to
+        fit the window size while maintaining its aspect. If the image is not
+        found or an error occurs during loading, a solid dark gray color is used
+        instead. The background is then sent to the back of the window.
+        """
+
         self.background = QLabel(self)
         try:
             pixmap = QPixmap("assets/bg_game_mode.png")
@@ -89,7 +111,13 @@ class GameSelectWidget(QWidget):
             self.setPalette(palette)
     
     def _create_image_button(self, image_path, text):
-        """Crea un botón con imagen y texto"""
+        
+        """
+        This method creates a button with an image from the assets folder and a text label below it.
+        It gets a specific image from the assets folder using the image_path parameter.
+        It returns a QPushButton object with the image and text.
+        """
+        
         button = QPushButton(self)
         button.setFixedSize(250, 180)
         
@@ -128,6 +156,12 @@ class GameSelectWidget(QWidget):
     
     def _style_buttons(self):
         # Estilo para los botones principales (verde musgo)
+        """
+        This method styles the buttons in the game selection screen, including the New Game, Load Maze, and Back buttons.
+        It sets the background color, border radius, border color, and pressed styles for the main buttons.
+        It also sets the font size, background color, text color, border radius, and border color for the Back button.
+        Additionally, it connects the New Game and Load Maze buttons to their respective slots.
+        """
         main_button_style = """
             QPushButton {
                 background-color: rgba(67, 93, 56, 0.8);
@@ -170,10 +204,22 @@ class GameSelectWidget(QWidget):
         """)
     
     def _start_new_game(self):
+        """
+        This method is called when the New Game button is clicked.
+        It changes the current widget to the size selection screen (index 3).
+        """
+
         self.parent_window.setCurrentIndex(3)    # Ve a selección de tamaño
 
     def _load_game(self):
-        """Muestra un cuadro de diálogo para seleccionar un mapa guardado."""
+        
+        """
+        This method is called when the Load Maze button is clicked.
+        It opens a file dialog for the user to select a JSON file containing a maze configuration.
+        If a file is selected, it tries to load the maze configuration from the file and tell the parent window to load it.
+        If the file cannot be loaded, it shows an error message box.
+        """
+
         options = QFileDialog.Option.ReadOnly
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
@@ -187,11 +233,11 @@ class GameSelectWidget(QWidget):
         if file_path:
             try:
                 with open(file_path, "r") as file:
-                    # Cargar el laberinto: asumimos que es una lista de listas de enteros
+                    # Cargar el laberinto: es una lista de listas de enteros
                     import json
                     maze_data = json.load(file)
             
-                # Pedimos a la ventana principal que cargue el laberinto
+                #  a la ventana principal que cargue el laberinto
                 if self.parent_window:
                     self.parent_window.load_saved_maze(maze_data)
             except Exception as e:
@@ -199,5 +245,9 @@ class GameSelectWidget(QWidget):
 
             
     def _go_back(self):
+        """
+        This method is called when the Back button is clicked.
+        It changes the current widget to the game mode selection screen (index 1).
+        """
         if self.parent_window:
             self.parent_window.setCurrentIndex(1)  # Volver a la selección de modo
